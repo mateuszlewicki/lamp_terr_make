@@ -1,55 +1,54 @@
 ---
-title: Terraform part 
-output: 
+title: "Terraform part"
+author: "Mateusz Lewicki"
+date:  "August 11, 2020"
+output:
   html_document: 
-    highlight: tango
-    theme: paper
+    theme: united
+    highlight: pygments
+    toc: yes
+    css: blocks.css
+    keep_md: yes
+  #  toc_float: yes
+  #  number_sections: yes
 ---
+
+
+
 # Puprouse of using Terraform
 
+Terraform by Hashicorp is infrastructure description langauage in HLC format (Hashicorp DSL) used in widely name CI/CD for construction of all needed infrastructure components for application by using principles of infrastructure as code.
+
 ## Brief of terrafom in current project
-::: Warning ::::::
-> This is a warning.
+Project consist of 7/8 terraform files (7 as code and 8th for state):
 
-# List of files
-- variables.tf
-- images.tf
-- terraform.tfvars
-- terraform.tfstate
-- outputs.tf
-- networks.tf
-- main.tf
+- [variables.tf](../terraform/variables.tf)
+- [images.tf](../terraform/images.tf)
+- [terraform.tfvars](../terraform/terraform.tfvars)
+- [terraform.tfstate](../terraform/terraform.tfstate)
+- [outputs.tf](../terraform/outputs.tf)
+- [networks.tf](../terraform/networks.tf)
+- [main.tf](../terraform/main.tf)
 
-::::::::::::::::::
+In this project Terraform is used to build "2 tier" infrastructure with loadbalancing in docker.
+
+<center>
+<!--html_preserve--><div id="htmlwidget-c91b758ec0f48806b510" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c91b758ec0f48806b510">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+</center>
+
+Terrraform code was split into parts (see above).  
+Terraform by default is looking through directory for every Terraform related files.   
+Terrafom does not need to have entrypoint file, but it is good practice to have main file.  
+Without [backend](https://www.terraform.io/docs/configuration/backend.html) declaration Terraform is using by default `local` provider which means that state file will be created in the same directory
+
 # File description
 
-## main.tf
-```hcl
-# terraform {
-#   backend "local" {
-#     path = "terraform.tfstate"
-#   }
-# }
-
-
+## main.tf (part of)
+```typescript
 provider "docker" {
-#   host = "tcp://127.0.0.1:2376/"
 }
 
-# variables
-
-## moved > ./variables.tf
-
-# Images
-
-## moved > ./images.tf
-
-#Networks
-
-## moved > ./networks.tf
-
-
-#machines
 
 resource "docker_container" "LB" {
   image = docker_image.lb.latest
@@ -85,77 +84,162 @@ resource "docker_container" "LB" {
   }
 }
 
-resource "docker_container" "apache_1" {
-  image = docker_image.web.latest
-  name  = "apache_1"
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host="db"
-    ip=docker_container.db_1.ip_address
+[...]
+
+```
+::: INFO
+>This file consist of [provider](https://www.terraform.io/docs/providers/index.html) 
+and [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
+used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
+and [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html)
+:::
+
+::: CODE_DESCIPTION
+### Overwiew
+**main.tf** file is (as the name suggests) the main file of whole infrastructure builded in this project. 
+At the top we have `provider` block it is saying that we want to use a docker provider in the latest version (as we don't specified the version)   
+Here we have a snippet of on of the **`docker_container`** resource with identifier **`LB`**. This resource is part of Docker provider described above. 
+It's built with several fields and block:  
+
+####  **`image = docker_image.lb.latest` - (type: String)  **
+
+>It is a name (or project/name) of the docker image to use. In this case we are referring to `docker_image` resource with `lb` identifier and the `latest`     version. `.latest` can be replaced by `:latest` tag
+
+#### **`name = "LB"` - (type: String)**
+
+>Literal name 
+
+#### **`networks_advanced{name=docker_network.public_network.name }` - (type:block->String)**
+ 
+> Block where we define to which network container should be attached (one block for one network).  
+> Inside we have `name` field where we ae using name of network (in this case public) from resource `docker_network` defined in *networks.tf* file
+
+#### **`  ports{ internal= var.http_port external= var.http_port }` - (type:block->Int,Int)**
+
+> Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable `http_port`
+
+#### **`host{ host="app1" ip=docker_container.apache_1.ip_address }`- (type:block->String,String)**  
+
+> Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` the `docker_container` resource 
+:::
+
+
+## images.tf
+```typescript
+resource "docker_image" "alpine" {
+  name = "alpine:latest"
+  keep_locally = true
+}
+
+resource "docker_image" "web" {
+  name = "${var.registry}/${var.web_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "db" {
+  name = "${var.registry}/${var.db_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "lb" {
+  name = "${var.registry}/${var.lb_image_name}"
+  keep_locally = true
+}
+```
+>This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
+used by [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html) 
+
+## networks.tf
+```typescript
+resource "docker_network" "app_network_1" {
+  name = "app_network_1"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.0/28"
   }
 }
 
-resource "docker_container" "apache_2" {
-  image = docker_image.web.latest
-  name  = "apache_2"
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host="db"
-    ip=docker_container.db_2.ip_address
+resource "docker_network" "app_network_2" {
+  name = "app_network_2"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.16/28"
   }
 }
-
-resource "docker_container" "db_1" {
-  image = docker_image.db.latest
-  name  = "db_1"
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
+resource "docker_network" "public_network" {
+  name = "public_network"
+  ipam_config{
+      subnet="10.0.0.32/28"
   }
 }
+```
+::: INFO
+>This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
+used by [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html) 
+:::
 
-resource "docker_container" "db_2" {
-  image = docker_image.db.latest
-  name  = "db_2"
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
-  }
+## variables.tf
+```typescript
+variable "http_port" {
+  type        = string
+}
+
+variable "https_port" {
+  type        = string
+}
+
+variable "db_port" {
+  type        = string
+}
+
+variable "registry" {
+  type        = string
+}
+
+variable "db_image_name" {
+  type        = string
+}
+variable "web_image_name" {
+  type        = string
+}
+variable "lb_image_name" {
+  type        = string
+}
+```
+::: INFO
+>This file consist of [variable](https://www.terraform.io/docs/configuration/variables.html) declaration blocks 
+used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
+:::
+
+## outputs.tf
+```typescript
+output "apache_1_ip_addr" {
+  value = docker_container.apache_1.ip_address
+}
+
+output "apache_2_ip_addr" {
+  value = docker_container.apache_2.ip_address
+}
+output "LB_ip_addr" {
+  value = docker_container.LB.ip_address
 }
 
 ```
-## images.tf
-
-## networks.tf
-
-## variables.tf
-
-## outputs.tf
+::: INFO
+>This file consist of [output](https://www.terraform.io/docs/configuration/outputs.html) declaration blocks 
+used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
+:::
 
 ## terraform.tfvars
+```typescript
+  http_port = "80"
+  https_port = "443"
+  db_port = "3306"
+  registry = "localhost:5000"
+  web_image_name = "lamp_terr/web"
+  db_image_name = "lamp_terr/database"
+  lb_image_name = "lamp_terr/loadbalancer"
+```
+::: INFO
+>This file consist of [variable definitions](https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files)
+:::

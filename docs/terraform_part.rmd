@@ -8,6 +8,7 @@ output:
     highlight: pygments
     toc: yes
     css: blocks.css
+    keep_md: yes
   #  toc_float: yes
   #  number_sections: yes
 ---
