@@ -1,7 +1,7 @@
 ---
 title: "Terraform part"
 author: "Mateusz Lewicki"
-date:  "August 11, 2020"
+date:  "sierpnia 11, 2020"
 output:
   html_document: 
     theme: united
@@ -9,8 +9,6 @@ output:
     toc: yes
     css: blocks.css
     keep_md: yes
-  #  toc_float: yes
-  #  number_sections: yes
 ---
 
 
@@ -20,21 +18,21 @@ output:
 Terraform by Hashicorp is infrastructure description langauage in HLC format (Hashicorp DSL) used in widely name CI/CD for construction of all needed infrastructure components for application by using principles of infrastructure as code.
 
 ## Brief of terrafom in current project
-Project consist of 7/8 terraform files (7 as code and 8th for state):
+Project consist of 6/7 terraform files (6 as code and 7th for state):
 
-- [variables.tf](../terraform/variables.tf)
+- [main.tf](../terraform/main.tf)
 - [images.tf](../terraform/images.tf)
+- [networks.tf](../terraform/networks.tf)
+- [outputs.tf](../terraform/outputs.tf)
+- [variables.tf](../terraform/variables.tf)
 - [terraform.tfvars](../terraform/terraform.tfvars)
 - [terraform.tfstate](../terraform/terraform.tfstate)
-- [outputs.tf](../terraform/outputs.tf)
-- [networks.tf](../terraform/networks.tf)
-- [main.tf](../terraform/main.tf)
 
 In this project Terraform is used to build "2 tier" infrastructure with loadbalancing in docker.
 
 <center>
-<!--html_preserve--><div id="htmlwidget-c91b758ec0f48806b510" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c91b758ec0f48806b510">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve--><div id="htmlwidget-c7943d6a9dd2f23ec49c" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c7943d6a9dd2f23ec49c">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 </center>
 
 Terrraform code was split into parts (see above).  
@@ -146,8 +144,23 @@ resource "docker_image" "lb" {
   keep_locally = true
 }
 ```
+::: INFO
 >This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html) 
+:::
+::: CODE_DESCIPTION
+
+### Overwiew
+**images.tf** file contains definitions of container images, which we can then use in `docker_container` resource.   
+File defines several `docker_image` blocks one for single image. This block in this case has two fields:  
+
+#### **`name = "${var.registry}/${var.web_image_name}"` - (type: String)**
+> This field defines which image to use. In this particural entry we use custom registry and image name defined in own variables.  
+> In the first resource block in source file you can find literall name of image `alpine:latest`
+
+#### **`keep_locally = true` - (type: Boolean)**
+> This field is informing provider to not remove images when `destroy` command is provided.
+:::
 
 ## networks.tf
 ```typescript
@@ -176,6 +189,21 @@ resource "docker_network" "public_network" {
 ::: INFO
 >This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html) 
+:::
+::: CODE_DESCIPTION
+
+### Overwiew
+**networks.tf** file contains definitions of docker networks, which we can then use in `docker_container` resource.   
+File defines several `docker_network` blocks one for single network. This block in this case has several fields such as:  
+
+#### **`name = "app_network_1"` - (type: String)**
+> This field defines name of network
+
+#### **`internal = true` - (type: Boolean)**
+> This field is informing provider that this network is private, and will not be accessible from outside (default public)
+
+#### **`ipam_config{subnet="10.0.0.32/28" }` - (type: Block -> Boolean)**
+> This block is having `subnet` field which consist network_addr/mask
 :::
 
 ## variables.tf
@@ -210,6 +238,15 @@ variable "lb_image_name" {
 >This file consist of [variable](https://www.terraform.io/docs/configuration/variables.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
 :::
+::: CODE_DESCIPTION
+
+### Overwiew
+**variables.tf** file contains definitions of variables.   
+Definition consist of `variable` resource keyword and identifier:
+
+#### **`type = String (type: predefined primitive)`**
+>Field which determines type of variable 
+:::
 
 ## outputs.tf
 ```typescript
@@ -229,6 +266,15 @@ output "LB_ip_addr" {
 >This file consist of [output](https://www.terraform.io/docs/configuration/outputs.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
 :::
+::: CODE_DESCIPTION
+
+### Overwiew
+**outputs.tf** file contains declaration of properties which will be produced at output of `apply` command.  
+
+#### **`value = docker_container.apache_1.ip_address` - (type: any)**
+> Field for assigning value for output
+:::
+
 
 ## terraform.tfvars
 ```typescript
@@ -242,4 +288,10 @@ used by [Terraform Configuration Language](https://www.terraform.io/docs/configu
 ```
 ::: INFO
 >This file consist of [variable definitions](https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files)
+:::
+::: CODE_DESCIPTION
+
+### Overwiew
+**terraform.tfvars** file contains values for variables.   
+*file `*.tfvars` is used by default if it is in the root folder of Terraform project*
 :::

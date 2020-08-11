@@ -9,6 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Mateusz Lewicki" />
 
 
 <title>Terraform part</title>
@@ -1744,60 +1745,45 @@ summary {
 
 
 <h1 class="title toc-ignore">Terraform part</h1>
+<h4 class="author">Mateusz Lewicki</h4>
+<h4 class="date">sierpnia 11, 2020</h4>
 
 </div>
 
 
 <div id="puprouse-of-using-terraform" class="section level1">
 <h1>Puprouse of using Terraform</h1>
+<p>Terraform by Hashicorp is infrastructure description langauage in HLC format (Hashicorp DSL) used in widely name CI/CD for construction of all needed infrastructure components for application by using principles of infrastructure as code.</p>
 <div id="brief-of-terrafom-in-current-project" class="section level2">
 <h2>Brief of terrafom in current project</h2>
-<div class="Warning">
-<blockquote>
-<p>This is a warning.</p>
-</blockquote>
-<h1 id="list-of-files">List of files</h1>
+<p>Project consist of 7/8 terraform files (7 as code and 8th for state):</p>
 <ul>
-<li>variables.tf</li>
-<li>images.tf</li>
-<li>terraform.tfvars</li>
-<li>terraform.tfstate</li>
-<li>outputs.tf</li>
-<li>networks.tf</li>
-<li>main.tf</li>
+<li><a href="../terraform/variables.tf">variables.tf</a></li>
+<li><a href="../terraform/images.tf">images.tf</a></li>
+<li><a href="../terraform/terraform.tfvars">terraform.tfvars</a></li>
+<li><a href="../terraform/terraform.tfstate">terraform.tfstate</a></li>
+<li><a href="../terraform/outputs.tf">outputs.tf</a></li>
+<li><a href="../terraform/networks.tf">networks.tf</a></li>
+<li><a href="../terraform/main.tf">main.tf</a></li>
 </ul>
-</div>
+<p>In this project Terraform is used to build “2 tier” infrastructure with loadbalancing in docker.</p>
+<center>
+<div id="htmlwidget-c574a903db5f905de12b" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c574a903db5f905de12b">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script>
+</center>
+<p>Terrraform code was split into parts (see above).<br />
+Terraform by default is looking through directory for every Terraform related files.<br />
+Terrafom does not need to have entrypoint file, but it is good practice to have main file.<br />
+Without <a href="https://www.terraform.io/docs/configuration/backend.html">backend</a> declaration Terraform is using by default <code>local</code> provider which means that state file will be created in the same directory</p>
 </div>
 </div>
 <div id="file-description" class="section level1">
 <h1>File description</h1>
-<div id="main.tf" class="section level2">
-<h2>main.tf</h2>
-<pre class="hcl"><code># terraform {
-#   backend &quot;local&quot; {
-#     path = &quot;terraform.tfstate&quot;
-#   }
-# }
-
-
-provider &quot;docker&quot; {
-#   host = &quot;tcp://127.0.0.1:2376/&quot;
+<div id="main.tf-part-of" class="section level2">
+<h2>main.tf (part of)</h2>
+<pre class="typescript"><code>provider &quot;docker&quot; {
 }
 
-# variables
-
-## moved &gt; ./variables.tf
-
-# Images
-
-## moved &gt; ./images.tf
-
-#Networks
-
-## moved &gt; ./networks.tf
-
-
-#machines
 
 resource &quot;docker_container&quot; &quot;LB&quot; {
   image = docker_image.lb.latest
@@ -1833,89 +1819,219 @@ resource &quot;docker_container&quot; &quot;LB&quot; {
   }
 }
 
-resource &quot;docker_container&quot; &quot;apache_1&quot; {
-  image = docker_image.web.latest
-  name  = &quot;apache_1&quot;
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host=&quot;db&quot;
-    ip=docker_container.db_1.ip_address
-  }
-}
-
-resource &quot;docker_container&quot; &quot;apache_2&quot; {
-  image = docker_image.web.latest
-  name  = &quot;apache_2&quot;
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host=&quot;db&quot;
-    ip=docker_container.db_2.ip_address
-  }
-}
-
-resource &quot;docker_container&quot; &quot;db_1&quot; {
-  image = docker_image.db.latest
-  name  = &quot;db_1&quot;
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
-  }
-}
-
-resource &quot;docker_container&quot; &quot;db_2&quot; {
-  image = docker_image.db.latest
-  name  = &quot;db_2&quot;
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
-  }
-}
+[...]
 </code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/providers/index.html">provider</a> and <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a> and <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew">Overwiew</h3>
+<p><strong>main.tf</strong> file is (as the name suggests) the main file of whole infrastructure builded in this project. At the top we have <code>provider</code> block it is saying that we want to use a docker provider in the latest version (as we don’t specified the version)<br />
+Here we have a snippet of on of the <strong><code>docker_container</code></strong> resource with identifier <strong><code>LB</code></strong>. This resource is part of Docker provider described above. It’s built with several fields and block:</p>
+<h4 id="image-docker_image.lb.latest---type-string"><strong><code>image = docker_image.lb.latest</code> - (type: String) </strong></h4>
+<blockquote>
+<p>It is a name (or project/name) of the docker image to use. In this case we are referring to <code>docker_image</code> resource with <code>lb</code> identifier and the <code>latest</code> version. <code>.latest</code> can be replaced by <code>:latest</code> tag</p>
+</blockquote>
+<h4 id="name-lb---type-string"><strong><code>name = &quot;LB&quot;</code> - (type: String)</strong></h4>
+<blockquote>
+<p>Literal name</p>
+</blockquote>
+<h4 id="networks_advancednamedocker_network.public_network.name---typeblock-string"><strong><code>networks_advanced{name=docker_network.public_network.name }</code> - (type:block-&gt;String)</strong></h4>
+<blockquote>
+<p>Block where we define to which network container should be attached (one block for one network).<br />
+Inside we have <code>name</code> field where we ae using name of network (in this case public) from resource <code>docker_network</code> defined in <em>networks.tf</em> file</p>
+</blockquote>
+<h4 id="ports-internal-var.http_port-external-var.http_port---typeblock-intint"><strong><code>ports{ internal= var.http_port external= var.http_port }</code> - (type:block-&gt;Int,Int)</strong></h4>
+<blockquote>
+<p>Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable <code>http_port</code></p>
+</blockquote>
+<h4 id="host-hostapp1-ipdocker_container.apache_1.ip_address---typeblock-stringstring"><strong><code>host{ host=&quot;app1&quot; ip=docker_container.apache_1.ip_address }</code>- (type:block-&gt;String,String)</strong></h4>
+<blockquote>
+<p>Block used for additional <code>/etc/hosts</code> entries. Here we are using <code>ip_address</code> from <code>apache_1</code> the <code>docker_container</code> resource</p>
+</blockquote>
+</div>
 </div>
 <div id="images.tf" class="section level2">
 <h2>images.tf</h2>
+<pre class="typescript"><code>resource &quot;docker_image&quot; &quot;alpine&quot; {
+  name = &quot;alpine:latest&quot;
+  keep_locally = true
+}
+
+resource &quot;docker_image&quot; &quot;web&quot; {
+  name = &quot;${var.registry}/${var.web_image_name}&quot;
+  keep_locally = true
+}
+
+resource &quot;docker_image&quot; &quot;db&quot; {
+  name = &quot;${var.registry}/${var.db_image_name}&quot;
+  keep_locally = true
+}
+
+resource &quot;docker_image&quot; &quot;lb&quot; {
+  name = &quot;${var.registry}/${var.lb_image_name}&quot;
+  keep_locally = true
+}</code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-1">Overwiew</h3>
+<p><strong>images.tf</strong> file contains definitions of container images, which we can then use in <code>docker_container</code> resource.<br />
+File defines several <code>docker_image</code> blocks one for single image. This block in this case has two fields:</p>
+<h4 id="name-var.registryvar.web_image_name---type-string"><strong><code>name = &quot;${var.registry}/${var.web_image_name}&quot;</code> - (type: String)</strong></h4>
+<blockquote>
+<p>This field defines which image to use. In this particural entry we use custom registry and image name defined in own variables.<br />
+In the first resource block in source file you can find literall name of image <code>alpine:latest</code></p>
+</blockquote>
+<h4 id="keep_locally-true---type-boolean"><strong><code>keep_locally = true</code> - (type: Boolean)</strong></h4>
+<blockquote>
+<p>This field is informing provider to not remove images when <code>destroy</code> command is provided.</p>
+</blockquote>
+</div>
 </div>
 <div id="networks.tf" class="section level2">
 <h2>networks.tf</h2>
+<pre class="typescript"><code>resource &quot;docker_network&quot; &quot;app_network_1&quot; {
+  name = &quot;app_network_1&quot;
+  internal = true
+  ipam_config{
+      subnet=&quot;10.0.0.0/28&quot;
+  }
+}
+
+resource &quot;docker_network&quot; &quot;app_network_2&quot; {
+  name = &quot;app_network_2&quot;
+  internal = true
+  ipam_config{
+      subnet=&quot;10.0.0.16/28&quot;
+  }
+}
+resource &quot;docker_network&quot; &quot;public_network&quot; {
+  name = &quot;public_network&quot;
+  ipam_config{
+      subnet=&quot;10.0.0.32/28&quot;
+  }
+}</code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-2">Overwiew</h3>
+<p><strong>networks.tf</strong> file contains definitions of docker networks, which we can then use in <code>docker_container</code> resource.<br />
+File defines several <code>docker_network</code> blocks one for single network. This block in this case has several fields such as:</p>
+<h4 id="name-app_network_1---type-string"><strong><code>name = &quot;app_network_1&quot;</code> - (type: String)</strong></h4>
+<blockquote>
+<p>This field defines name of network</p>
+</blockquote>
+<h4 id="internal-true---type-boolean"><strong><code>internal = true</code> - (type: Boolean)</strong></h4>
+<blockquote>
+<p>This field is informing provider that this network is private, and will not be accessible from outside (default public)</p>
+</blockquote>
+<h4 id="ipam_configsubnet10.0.0.3228---type-block---boolean"><strong><code>ipam_config{subnet=&quot;10.0.0.32/28&quot; }</code> - (type: Block -&gt; Boolean)</strong></h4>
+<blockquote>
+<p>This block is having <code>subnet</code> field which consist network_addr/mask</p>
+</blockquote>
+</div>
 </div>
 <div id="variables.tf" class="section level2">
 <h2>variables.tf</h2>
+<pre class="typescript"><code>variable &quot;http_port&quot; {
+  type        = string
+}
+
+variable &quot;https_port&quot; {
+  type        = string
+}
+
+variable &quot;db_port&quot; {
+  type        = string
+}
+
+variable &quot;registry&quot; {
+  type        = string
+}
+
+variable &quot;db_image_name&quot; {
+  type        = string
+}
+variable &quot;web_image_name&quot; {
+  type        = string
+}
+variable &quot;lb_image_name&quot; {
+  type        = string
+}</code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html">variable</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-3">Overwiew</h3>
+<p><strong>variables.tf</strong> file contains definitions of variables.<br />
+Definition consist of <code>variable</code> resource keyword and identifier:</p>
+<h4 id="type-string-type-predefined-primitive"><strong><code>type = String (type: predefined primitive)</code></strong></h4>
+<blockquote>
+<p>Field which determines type of variable</p>
+</blockquote>
+</div>
 </div>
 <div id="outputs.tf" class="section level2">
 <h2>outputs.tf</h2>
+<pre class="typescript"><code>output &quot;apache_1_ip_addr&quot; {
+  value = docker_container.apache_1.ip_address
+}
+
+output &quot;apache_2_ip_addr&quot; {
+  value = docker_container.apache_2.ip_address
+}
+output &quot;LB_ip_addr&quot; {
+  value = docker_container.LB.ip_address
+}
+</code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/configuration/outputs.html">output</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-4">Overwiew</h3>
+<p><strong>outputs.tf</strong> file contains declaration of properties which will be produced at output of <code>apply</code> command.</p>
+<h4 id="value-docker_container.apache_1.ip_address---type-any"><strong><code>value = docker_container.apache_1.ip_address</code> - (type: any)</strong></h4>
+<blockquote>
+<p>Field for assigning value for output</p>
+</blockquote>
+</div>
 </div>
 <div id="terraform.tfvars" class="section level2">
 <h2>terraform.tfvars</h2>
+<pre class="typescript"><code>  http_port = &quot;80&quot;
+  https_port = &quot;443&quot;
+  db_port = &quot;3306&quot;
+  registry = &quot;localhost:5000&quot;
+  web_image_name = &quot;lamp_terr/web&quot;
+  db_image_name = &quot;lamp_terr/database&quot;
+  lb_image_name = &quot;lamp_terr/loadbalancer&quot;</code></pre>
+<div class="INFO">
+<blockquote>
+<p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files">variable definitions</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-5">Overwiew</h3>
+<p><strong>terraform.tfvars</strong> file contains values for variables.<br />
+<em>file <code>*.tfvars</code> is used by default if it is in the root folder of Terraform project</em></p>
+</div>
 </div>
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiBUZXJyYWZvcm0gcGFydCAKb3V0cHV0OiAKICBodG1sX2RvY3VtZW50OiAKICAgIGhpZ2hsaWdodDogdGFuZ28KICAgIHRoZW1lOiBwYXBlcgotLS0KIyBQdXByb3VzZSBvZiB1c2luZyBUZXJyYWZvcm0KCiMjIEJyaWVmIG9mIHRlcnJhZm9tIGluIGN1cnJlbnQgcHJvamVjdAo6OjogV2FybmluZyA6Ojo6OjoKPiBUaGlzIGlzIGEgd2FybmluZy4KCiMgTGlzdCBvZiBmaWxlcwotIHZhcmlhYmxlcy50ZgotIGltYWdlcy50ZgotIHRlcnJhZm9ybS50ZnZhcnMKLSB0ZXJyYWZvcm0udGZzdGF0ZQotIG91dHB1dHMudGYKLSBuZXR3b3Jrcy50ZgotIG1haW4udGYKCjo6Ojo6Ojo6Ojo6Ojo6Ojo6OgojIEZpbGUgZGVzY3JpcHRpb24KCiMjIG1haW4udGYKYGBgaGNsCiMgdGVycmFmb3JtIHsKIyAgIGJhY2tlbmQgImxvY2FsIiB7CiMgICAgIHBhdGggPSAidGVycmFmb3JtLnRmc3RhdGUiCiMgICB9CiMgfQoKCnByb3ZpZGVyICJkb2NrZXIiIHsKIyAgIGhvc3QgPSAidGNwOi8vMTI3LjAuMC4xOjIzNzYvIgp9CgojIHZhcmlhYmxlcwoKIyMgbW92ZWQgPiAuL3ZhcmlhYmxlcy50ZgoKIyBJbWFnZXMKCiMjIG1vdmVkID4gLi9pbWFnZXMudGYKCiNOZXR3b3JrcwoKIyMgbW92ZWQgPiAuL25ldHdvcmtzLnRmCgoKI21hY2hpbmVzCgpyZXNvdXJjZSAiZG9ja2VyX2NvbnRhaW5lciIgIkxCIiB7CiAgaW1hZ2UgPSBkb2NrZXJfaW1hZ2UubGIubGF0ZXN0CiAgbmFtZSAgPSAiTEIiCiAgbmV0d29ya3NfYWR2YW5jZWR7CiAgICAgIG5hbWU9ZG9ja2VyX25ldHdvcmsucHVibGljX25ldHdvcmsubmFtZQogIH0KICBuZXR3b3Jrc19hZHZhbmNlZHsKICAgICAgbmFtZT1kb2NrZXJfbmV0d29yay5hcHBfbmV0d29ya18xLm5hbWUKICB9CiAgbmV0d29ya3NfYWR2YW5jZWR7CiAgICAgIG5hbWU9ZG9ja2VyX25ldHdvcmsuYXBwX25ldHdvcmtfMi5uYW1lCiAgfQogIHBvcnRzewogICAgICBpbnRlcm5hbD0gdmFyLmh0dHBfcG9ydAogICAgICBleHRlcm5hbD0gdmFyLmh0dHBfcG9ydAogIH0KICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSB2YXIuaHR0cHNfcG9ydAogICAgICBleHRlcm5hbCA9IHZhci5odHRwc19wb3J0CiAgfQogICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSAxOTM2CiAgICAgIGV4dGVybmFsID0gMTkzNgogIH0KICBob3N0ewogICAgaG9zdD0iYXBwMSIKICAgIGlwPWRvY2tlcl9jb250YWluZXIuYXBhY2hlXzEuaXBfYWRkcmVzcwogIH0KICBob3N0ewogICAgaG9zdD0iYXBwMiIKICAgIGlwPWRvY2tlcl9jb250YWluZXIuYXBhY2hlXzIuaXBfYWRkcmVzcwogIH0KfQoKcmVzb3VyY2UgImRvY2tlcl9jb250YWluZXIiICJhcGFjaGVfMSIgewogIGltYWdlID0gZG9ja2VyX2ltYWdlLndlYi5sYXRlc3QKICBuYW1lICA9ICJhcGFjaGVfMSIKICBuZXR3b3Jrc19hZHZhbmNlZHsKICAgICAgbmFtZT1kb2NrZXJfbmV0d29yay5hcHBfbmV0d29ya18xLm5hbWUKICB9CiAgcG9ydHN7CiAgICAgIGludGVybmFsPSB2YXIuaHR0cF9wb3J0CiAgICAgIGV4dGVybmFsPSB2YXIuaHR0cF9wb3J0CiAgfQogIHBvcnRzewogICAgICBpbnRlcm5hbCA9IHZhci5odHRwc19wb3J0CiAgICAgIGV4dGVybmFsID0gdmFyLmh0dHBzX3BvcnQKICB9CiAgaG9zdHsKICAgIGhvc3Q9ImRiIgogICAgaXA9ZG9ja2VyX2NvbnRhaW5lci5kYl8xLmlwX2FkZHJlc3MKICB9Cn0KCnJlc291cmNlICJkb2NrZXJfY29udGFpbmVyIiAiYXBhY2hlXzIiIHsKICBpbWFnZSA9IGRvY2tlcl9pbWFnZS53ZWIubGF0ZXN0CiAgbmFtZSAgPSAiYXBhY2hlXzIiCiAgbmV0d29ya3NfYWR2YW5jZWR7CiAgICAgIG5hbWU9ZG9ja2VyX25ldHdvcmsuYXBwX25ldHdvcmtfMi5uYW1lCiAgfQogIHBvcnRzewogICAgICBpbnRlcm5hbD0gdmFyLmh0dHBfcG9ydAogICAgICBleHRlcm5hbD0gdmFyLmh0dHBfcG9ydAogIH0KICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSB2YXIuaHR0cHNfcG9ydAogICAgICBleHRlcm5hbCA9IHZhci5odHRwc19wb3J0CiAgfQogIGhvc3R7CiAgICBob3N0PSJkYiIKICAgIGlwPWRvY2tlcl9jb250YWluZXIuZGJfMi5pcF9hZGRyZXNzCiAgfQp9CgpyZXNvdXJjZSAiZG9ja2VyX2NvbnRhaW5lciIgImRiXzEiIHsKICBpbWFnZSA9IGRvY2tlcl9pbWFnZS5kYi5sYXRlc3QKICBuYW1lICA9ICJkYl8xIgogIG5ldHdvcmtzX2FkdmFuY2VkewogICAgICBuYW1lPWRvY2tlcl9uZXR3b3JrLmFwcF9uZXR3b3JrXzEubmFtZQogIH0KICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSB2YXIuZGJfcG9ydAogICAgICBleHRlcm5hbCA9IHZhci5kYl9wb3J0CiAgfQp9CgpyZXNvdXJjZSAiZG9ja2VyX2NvbnRhaW5lciIgImRiXzIiIHsKICBpbWFnZSA9IGRvY2tlcl9pbWFnZS5kYi5sYXRlc3QKICBuYW1lICA9ICJkYl8yIgogIG5ldHdvcmtzX2FkdmFuY2VkewogICAgICBuYW1lPWRvY2tlcl9uZXR3b3JrLmFwcF9uZXR3b3JrXzIubmFtZQogIH0KICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSB2YXIuZGJfcG9ydAogICAgICBleHRlcm5hbCA9IHZhci5kYl9wb3J0CiAgfQp9CgpgYGAKIyMgaW1hZ2VzLnRmCgojIyBuZXR3b3Jrcy50ZgoKIyMgdmFyaWFibGVzLnRmCgojIyBvdXRwdXRzLnRmCgojIyB0ZXJyYWZvcm0udGZ2YXJz</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiVGVycmFmb3JtIHBhcnQiCmF1dGhvcjogIk1hdGV1c3ogTGV3aWNraSIKZGF0ZTogICJzaWVycG5pYSAxMSwgMjAyMCIKb3V0cHV0OgogIGh0bWxfZG9jdW1lbnQ6IAogICAgdGhlbWU6IHVuaXRlZAogICAgaGlnaGxpZ2h0OiBweWdtZW50cwogICAgdG9jOiB5ZXMKICAgIGNzczogYmxvY2tzLmNzcwogICAga2VlcF9tZDogeWVzCi0tLQoKCgojIFB1cHJvdXNlIG9mIHVzaW5nIFRlcnJhZm9ybQoKVGVycmFmb3JtIGJ5IEhhc2hpY29ycCBpcyBpbmZyYXN0cnVjdHVyZSBkZXNjcmlwdGlvbiBsYW5nYXVhZ2UgaW4gSExDIGZvcm1hdCAoSGFzaGljb3JwIERTTCkgdXNlZCBpbiB3aWRlbHkgbmFtZSBDSS9DRCBmb3IgY29uc3RydWN0aW9uIG9mIGFsbCBuZWVkZWQgaW5mcmFzdHJ1Y3R1cmUgY29tcG9uZW50cyBmb3IgYXBwbGljYXRpb24gYnkgdXNpbmcgcHJpbmNpcGxlcyBvZiBpbmZyYXN0cnVjdHVyZSBhcyBjb2RlLgoKIyMgQnJpZWYgb2YgdGVycmFmb20gaW4gY3VycmVudCBwcm9qZWN0ClByb2plY3QgY29uc2lzdCBvZiA3LzggdGVycmFmb3JtIGZpbGVzICg3IGFzIGNvZGUgYW5kIDh0aCBmb3Igc3RhdGUpOgoKLSBbdmFyaWFibGVzLnRmXSguLi90ZXJyYWZvcm0vdmFyaWFibGVzLnRmKQotIFtpbWFnZXMudGZdKC4uL3RlcnJhZm9ybS9pbWFnZXMudGYpCi0gW3RlcnJhZm9ybS50ZnZhcnNdKC4uL3RlcnJhZm9ybS90ZXJyYWZvcm0udGZ2YXJzKQotIFt0ZXJyYWZvcm0udGZzdGF0ZV0oLi4vdGVycmFmb3JtL3RlcnJhZm9ybS50ZnN0YXRlKQotIFtvdXRwdXRzLnRmXSguLi90ZXJyYWZvcm0vb3V0cHV0cy50ZikKLSBbbmV0d29ya3MudGZdKC4uL3RlcnJhZm9ybS9uZXR3b3Jrcy50ZikKLSBbbWFpbi50Zl0oLi4vdGVycmFmb3JtL21haW4udGYpCgpJbiB0aGlzIHByb2plY3QgVGVycmFmb3JtIGlzIHVzZWQgdG8gYnVpbGQgIjIgdGllciIgaW5mcmFzdHJ1Y3R1cmUgd2l0aCBsb2FkYmFsYW5jaW5nIGluIGRvY2tlci4KCjxjZW50ZXI+CjwhLS1odG1sX3ByZXNlcnZlLS0+PGRpdiBpZD0iaHRtbHdpZGdldC1jNTc0YTkwM2RiNWY5MDVkZTEyYiIgc3R5bGU9IndpZHRoOjY3MnB4O2hlaWdodDo0ODBweDsiIGNsYXNzPSJEaWFncmFtbWVSIGh0bWwtd2lkZ2V0Ij48L2Rpdj4KPHNjcmlwdCB0eXBlPSJhcHBsaWNhdGlvbi9qc29uIiBkYXRhLWZvcj0iaHRtbHdpZGdldC1jNTc0YTkwM2RiNWY5MDVkZTEyYiI+eyJ4Ijp7ImRpYWdyYW0iOiJcbmdyYXBoIExSO1xuICAgIEFbQ2xpZW50XS0tPnxwdWJsaWN8IEJbSEFwcm94eV1cbiAgICBCLS0+fHByaXZhdGV8IENbQXBhY2hlK1BIUDddXG4gICAgQy0tPkVbTXlTUUxdXG4gICAgQi0tPnxwcml2YXRlfCBEW0FwYWNoZStQSFA3XVxuICAgIEQtLT5GW015U1FMXVxuICAgIHN1YmdyYXBoIDEwLjAuMC4zMi8yNlxuICAgIEJcbiAgICBlbmRcbiAgICBzdWJncmFwaCAxMC4wLjAuMC8yNlxuICAgIENcbiAgICBFXG4gICAgZW5kXG4gICAgc3ViZ3JhcGggMTAuMC4wLjE2LzI2XG4gICAgRFxuICAgIEZcbiAgICBlbmRcbiJ9LCJldmFscyI6W10sImpzSG9va3MiOltdfTwvc2NyaXB0PjwhLS0vaHRtbF9wcmVzZXJ2ZS0tPgo8L2NlbnRlcj4KClRlcnJyYWZvcm0gY29kZSB3YXMgc3BsaXQgaW50byBwYXJ0cyAoc2VlIGFib3ZlKS4gIApUZXJyYWZvcm0gYnkgZGVmYXVsdCBpcyBsb29raW5nIHRocm91Z2ggZGlyZWN0b3J5IGZvciBldmVyeSBUZXJyYWZvcm0gcmVsYXRlZCBmaWxlcy4gICAKVGVycmFmb20gZG9lcyBub3QgbmVlZCB0byBoYXZlIGVudHJ5cG9pbnQgZmlsZSwgYnV0IGl0IGlzIGdvb2QgcHJhY3RpY2UgdG8gaGF2ZSBtYWluIGZpbGUuICAKV2l0aG91dCBbYmFja2VuZF0oaHR0cHM6Ly93d3cudGVycmFmb3JtLmlvL2RvY3MvY29uZmlndXJhdGlvbi9iYWNrZW5kLmh0bWwpIGRlY2xhcmF0aW9uIFRlcnJhZm9ybSBpcyB1c2luZyBieSBkZWZhdWx0IGBsb2NhbGAgcHJvdmlkZXIgd2hpY2ggbWVhbnMgdGhhdCBzdGF0ZSBmaWxlIHdpbGwgYmUgY3JlYXRlZCBpbiB0aGUgc2FtZSBkaXJlY3RvcnkKCiMgRmlsZSBkZXNjcmlwdGlvbgoKIyMgbWFpbi50ZiAocGFydCBvZikKYGBgdHlwZXNjcmlwdApwcm92aWRlciAiZG9ja2VyIiB7Cn0KCgpyZXNvdXJjZSAiZG9ja2VyX2NvbnRhaW5lciIgIkxCIiB7CiAgaW1hZ2UgPSBkb2NrZXJfaW1hZ2UubGIubGF0ZXN0CiAgbmFtZSAgPSAiTEIiCiAgbmV0d29ya3NfYWR2YW5jZWR7CiAgICAgIG5hbWU9ZG9ja2VyX25ldHdvcmsucHVibGljX25ldHdvcmsubmFtZQogIH0KICBuZXR3b3Jrc19hZHZhbmNlZHsKICAgICAgbmFtZT1kb2NrZXJfbmV0d29yay5hcHBfbmV0d29ya18xLm5hbWUKICB9CiAgbmV0d29ya3NfYWR2YW5jZWR7CiAgICAgIG5hbWU9ZG9ja2VyX25ldHdvcmsuYXBwX25ldHdvcmtfMi5uYW1lCiAgfQogIHBvcnRzewogICAgICBpbnRlcm5hbD0gdmFyLmh0dHBfcG9ydAogICAgICBleHRlcm5hbD0gdmFyLmh0dHBfcG9ydAogIH0KICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSB2YXIuaHR0cHNfcG9ydAogICAgICBleHRlcm5hbCA9IHZhci5odHRwc19wb3J0CiAgfQogICBwb3J0c3sKICAgICAgaW50ZXJuYWwgPSAxOTM2CiAgICAgIGV4dGVybmFsID0gMTkzNgogIH0KICBob3N0ewogICAgaG9zdD0iYXBwMSIKICAgIGlwPWRvY2tlcl9jb250YWluZXIuYXBhY2hlXzEuaXBfYWRkcmVzcwogIH0KICBob3N0ewogICAgaG9zdD0iYXBwMiIKICAgIGlwPWRvY2tlcl9jb250YWluZXIuYXBhY2hlXzIuaXBfYWRkcmVzcwogIH0KfQoKWy4uLl0KCmBgYAo6OjogSU5GTwo+VGhpcyBmaWxlIGNvbnNpc3Qgb2YgW3Byb3ZpZGVyXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9wcm92aWRlcnMvaW5kZXguaHRtbCkgCmFuZCBbcmVzb3VyY2VdKGh0dHBzOi8vd3d3LnRlcnJhZm9ybS5pby9kb2NzL2NvbmZpZ3VyYXRpb24vcmVzb3VyY2VzLmh0bWwpIGRlY2xhcmF0aW9uIGJsb2NrcyAKdXNlZCBieSBbVGVycmFmb3JtIENvbmZpZ3VyYXRpb24gTGFuZ3VhZ2VdKGh0dHBzOi8vd3d3LnRlcnJhZm9ybS5pby9kb2NzL2NvbmZpZ3VyYXRpb24vaW5kZXguaHRtbCkgCmFuZCBbRG9ja2VyIFByb3ZpZGVyXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9wcm92aWRlcnMvZG9ja2VyL2luZGV4Lmh0bWwpCjo6OgoKOjo6IENPREVfREVTQ0lQVElPTgojIyMgT3ZlcndpZXcKKiptYWluLnRmKiogZmlsZSBpcyAoYXMgdGhlIG5hbWUgc3VnZ2VzdHMpIHRoZSBtYWluIGZpbGUgb2Ygd2hvbGUgaW5mcmFzdHJ1Y3R1cmUgYnVpbGRlZCBpbiB0aGlzIHByb2plY3QuIApBdCB0aGUgdG9wIHdlIGhhdmUgYHByb3ZpZGVyYCBibG9jayBpdCBpcyBzYXlpbmcgdGhhdCB3ZSB3YW50IHRvIHVzZSBhIGRvY2tlciBwcm92aWRlciBpbiB0aGUgbGF0ZXN0IHZlcnNpb24gKGFzIHdlIGRvbid0IHNwZWNpZmllZCB0aGUgdmVyc2lvbikgICAKSGVyZSB3ZSBoYXZlIGEgc25pcHBldCBvZiBvbiBvZiB0aGUgKipgZG9ja2VyX2NvbnRhaW5lcmAqKiByZXNvdXJjZSB3aXRoIGlkZW50aWZpZXIgKipgTEJgKiouIFRoaXMgcmVzb3VyY2UgaXMgcGFydCBvZiBEb2NrZXIgcHJvdmlkZXIgZGVzY3JpYmVkIGFib3ZlLiAKSXQncyBidWlsdCB3aXRoIHNldmVyYWwgZmllbGRzIGFuZCBibG9jazogIAoKIyMjIyAgKipgaW1hZ2UgPSBkb2NrZXJfaW1hZ2UubGIubGF0ZXN0YCAtICh0eXBlOiBTdHJpbmcpICAqKgoKPkl0IGlzIGEgbmFtZSAob3IgcHJvamVjdC9uYW1lKSBvZiB0aGUgZG9ja2VyIGltYWdlIHRvIHVzZS4gSW4gdGhpcyBjYXNlIHdlIGFyZSByZWZlcnJpbmcgdG8gYGRvY2tlcl9pbWFnZWAgcmVzb3VyY2Ugd2l0aCBgbGJgIGlkZW50aWZpZXIgYW5kIHRoZSBgbGF0ZXN0YCAgICAgdmVyc2lvbi4gYC5sYXRlc3RgIGNhbiBiZSByZXBsYWNlZCBieSBgOmxhdGVzdGAgdGFnCgojIyMjICoqYG5hbWUgPSAiTEIiYCAtICh0eXBlOiBTdHJpbmcpKioKCj5MaXRlcmFsIG5hbWUgCgojIyMjICoqYG5ldHdvcmtzX2FkdmFuY2Vke25hbWU9ZG9ja2VyX25ldHdvcmsucHVibGljX25ldHdvcmsubmFtZSB9YCAtICh0eXBlOmJsb2NrLT5TdHJpbmcpKioKIAo+IEJsb2NrIHdoZXJlIHdlIGRlZmluZSB0byB3aGljaCBuZXR3b3JrIGNvbnRhaW5lciBzaG91bGQgYmUgYXR0YWNoZWQgKG9uZSBibG9jayBmb3Igb25lIG5ldHdvcmspLiAgCj4gSW5zaWRlIHdlIGhhdmUgYG5hbWVgIGZpZWxkIHdoZXJlIHdlIGFlIHVzaW5nIG5hbWUgb2YgbmV0d29yayAoaW4gdGhpcyBjYXNlIHB1YmxpYykgZnJvbSByZXNvdXJjZSBgZG9ja2VyX25ldHdvcmtgIGRlZmluZWQgaW4gKm5ldHdvcmtzLnRmKiBmaWxlCgojIyMjICoqYCAgcG9ydHN7IGludGVybmFsPSB2YXIuaHR0cF9wb3J0IGV4dGVybmFsPSB2YXIuaHR0cF9wb3J0IH1gIC0gKHR5cGU6YmxvY2stPkludCxJbnQpKioKCj4gQmxvY2sgd2l0aCBkZWZpbml0aW9uIHdoaWNoIHBvcnRzIHNob3VsZCBiZSBleHBvc2VkIChvbmUgYmxvY2sgZm9yIG9uZSBwb3J0cyBwYWlyKS4gSGVyZSB3ZSBhcmUgdXNpbmcgcG9ydHMgZnJvbSB2YXJpYWJsZSBgaHR0cF9wb3J0YAoKIyMjIyAqKmBob3N0eyBob3N0PSJhcHAxIiBpcD1kb2NrZXJfY29udGFpbmVyLmFwYWNoZV8xLmlwX2FkZHJlc3MgfWAtICh0eXBlOmJsb2NrLT5TdHJpbmcsU3RyaW5nKSoqICAKCj4gQmxvY2sgdXNlZCBmb3IgYWRkaXRpb25hbCBgL2V0Yy9ob3N0c2AgZW50cmllcy4gSGVyZSB3ZSBhcmUgdXNpbmcgYGlwX2FkZHJlc3NgIGZyb20gYGFwYWNoZV8xYCB0aGUgYGRvY2tlcl9jb250YWluZXJgIHJlc291cmNlIAo6OjoKCgojIyBpbWFnZXMudGYKYGBgdHlwZXNjcmlwdApyZXNvdXJjZSAiZG9ja2VyX2ltYWdlIiAiYWxwaW5lIiB7CiAgbmFtZSA9ICJhbHBpbmU6bGF0ZXN0IgogIGtlZXBfbG9jYWxseSA9IHRydWUKfQoKcmVzb3VyY2UgImRvY2tlcl9pbWFnZSIgIndlYiIgewogIG5hbWUgPSAiJHt2YXIucmVnaXN0cnl9LyR7dmFyLndlYl9pbWFnZV9uYW1lfSIKICBrZWVwX2xvY2FsbHkgPSB0cnVlCn0KCnJlc291cmNlICJkb2NrZXJfaW1hZ2UiICJkYiIgewogIG5hbWUgPSAiJHt2YXIucmVnaXN0cnl9LyR7dmFyLmRiX2ltYWdlX25hbWV9IgogIGtlZXBfbG9jYWxseSA9IHRydWUKfQoKcmVzb3VyY2UgImRvY2tlcl9pbWFnZSIgImxiIiB7CiAgbmFtZSA9ICIke3Zhci5yZWdpc3RyeX0vJHt2YXIubGJfaW1hZ2VfbmFtZX0iCiAga2VlcF9sb2NhbGx5ID0gdHJ1ZQp9CmBgYAo6OjogSU5GTwo+VGhpcyBmaWxlIGNvbnNpc3Qgb2YgW3Jlc291cmNlXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9jb25maWd1cmF0aW9uL3Jlc291cmNlcy5odG1sKSBkZWNsYXJhdGlvbiBibG9ja3MgCnVzZWQgYnkgW0RvY2tlciBQcm92aWRlcl0oaHR0cHM6Ly93d3cudGVycmFmb3JtLmlvL2RvY3MvcHJvdmlkZXJzL2RvY2tlci9pbmRleC5odG1sKSAKOjo6Cjo6OiBDT0RFX0RFU0NJUFRJT04KCiMjIyBPdmVyd2lldwoqKmltYWdlcy50ZioqIGZpbGUgY29udGFpbnMgZGVmaW5pdGlvbnMgb2YgY29udGFpbmVyIGltYWdlcywgd2hpY2ggd2UgY2FuIHRoZW4gdXNlIGluIGBkb2NrZXJfY29udGFpbmVyYCByZXNvdXJjZS4gICAKRmlsZSBkZWZpbmVzIHNldmVyYWwgYGRvY2tlcl9pbWFnZWAgYmxvY2tzIG9uZSBmb3Igc2luZ2xlIGltYWdlLiBUaGlzIGJsb2NrIGluIHRoaXMgY2FzZSBoYXMgdHdvIGZpZWxkczogIAoKIyMjIyAqKmBuYW1lID0gIiR7dmFyLnJlZ2lzdHJ5fS8ke3Zhci53ZWJfaW1hZ2VfbmFtZX0iYCAtICh0eXBlOiBTdHJpbmcpKioKPiBUaGlzIGZpZWxkIGRlZmluZXMgd2hpY2ggaW1hZ2UgdG8gdXNlLiBJbiB0aGlzIHBhcnRpY3VyYWwgZW50cnkgd2UgdXNlIGN1c3RvbSByZWdpc3RyeSBhbmQgaW1hZ2UgbmFtZSBkZWZpbmVkIGluIG93biB2YXJpYWJsZXMuICAKPiBJbiB0aGUgZmlyc3QgcmVzb3VyY2UgYmxvY2sgaW4gc291cmNlIGZpbGUgeW91IGNhbiBmaW5kIGxpdGVyYWxsIG5hbWUgb2YgaW1hZ2UgYGFscGluZTpsYXRlc3RgCgojIyMjICoqYGtlZXBfbG9jYWxseSA9IHRydWVgIC0gKHR5cGU6IEJvb2xlYW4pKioKPiBUaGlzIGZpZWxkIGlzIGluZm9ybWluZyBwcm92aWRlciB0byBub3QgcmVtb3ZlIGltYWdlcyB3aGVuIGBkZXN0cm95YCBjb21tYW5kIGlzIHByb3ZpZGVkLgo6OjoKCiMjIG5ldHdvcmtzLnRmCmBgYHR5cGVzY3JpcHQKcmVzb3VyY2UgImRvY2tlcl9uZXR3b3JrIiAiYXBwX25ldHdvcmtfMSIgewogIG5hbWUgPSAiYXBwX25ldHdvcmtfMSIKICBpbnRlcm5hbCA9IHRydWUKICBpcGFtX2NvbmZpZ3sKICAgICAgc3VibmV0PSIxMC4wLjAuMC8yOCIKICB9Cn0KCnJlc291cmNlICJkb2NrZXJfbmV0d29yayIgImFwcF9uZXR3b3JrXzIiIHsKICBuYW1lID0gImFwcF9uZXR3b3JrXzIiCiAgaW50ZXJuYWwgPSB0cnVlCiAgaXBhbV9jb25maWd7CiAgICAgIHN1Ym5ldD0iMTAuMC4wLjE2LzI4IgogIH0KfQpyZXNvdXJjZSAiZG9ja2VyX25ldHdvcmsiICJwdWJsaWNfbmV0d29yayIgewogIG5hbWUgPSAicHVibGljX25ldHdvcmsiCiAgaXBhbV9jb25maWd7CiAgICAgIHN1Ym5ldD0iMTAuMC4wLjMyLzI4IgogIH0KfQpgYGAKOjo6IElORk8KPlRoaXMgZmlsZSBjb25zaXN0IG9mIFtyZXNvdXJjZV0oaHR0cHM6Ly93d3cudGVycmFmb3JtLmlvL2RvY3MvY29uZmlndXJhdGlvbi9yZXNvdXJjZXMuaHRtbCkgZGVjbGFyYXRpb24gYmxvY2tzIAp1c2VkIGJ5IFtEb2NrZXIgUHJvdmlkZXJdKGh0dHBzOi8vd3d3LnRlcnJhZm9ybS5pby9kb2NzL3Byb3ZpZGVycy9kb2NrZXIvaW5kZXguaHRtbCkgCjo6Ogo6OjogQ09ERV9ERVNDSVBUSU9OCgojIyMgT3ZlcndpZXcKKipuZXR3b3Jrcy50ZioqIGZpbGUgY29udGFpbnMgZGVmaW5pdGlvbnMgb2YgZG9ja2VyIG5ldHdvcmtzLCB3aGljaCB3ZSBjYW4gdGhlbiB1c2UgaW4gYGRvY2tlcl9jb250YWluZXJgIHJlc291cmNlLiAgIApGaWxlIGRlZmluZXMgc2V2ZXJhbCBgZG9ja2VyX25ldHdvcmtgIGJsb2NrcyBvbmUgZm9yIHNpbmdsZSBuZXR3b3JrLiBUaGlzIGJsb2NrIGluIHRoaXMgY2FzZSBoYXMgc2V2ZXJhbCBmaWVsZHMgc3VjaCBhczogIAoKIyMjIyAqKmBuYW1lID0gImFwcF9uZXR3b3JrXzEiYCAtICh0eXBlOiBTdHJpbmcpKioKPiBUaGlzIGZpZWxkIGRlZmluZXMgbmFtZSBvZiBuZXR3b3JrCgojIyMjICoqYGludGVybmFsID0gdHJ1ZWAgLSAodHlwZTogQm9vbGVhbikqKgo+IFRoaXMgZmllbGQgaXMgaW5mb3JtaW5nIHByb3ZpZGVyIHRoYXQgdGhpcyBuZXR3b3JrIGlzIHByaXZhdGUsIGFuZCB3aWxsIG5vdCBiZSBhY2Nlc3NpYmxlIGZyb20gb3V0c2lkZSAoZGVmYXVsdCBwdWJsaWMpCgojIyMjICoqYGlwYW1fY29uZmlne3N1Ym5ldD0iMTAuMC4wLjMyLzI4IiB9YCAtICh0eXBlOiBCbG9jayAtPiBCb29sZWFuKSoqCj4gVGhpcyBibG9jayBpcyBoYXZpbmcgYHN1Ym5ldGAgZmllbGQgd2hpY2ggY29uc2lzdCBuZXR3b3JrX2FkZHIvbWFzawo6OjoKCiMjIHZhcmlhYmxlcy50ZgpgYGB0eXBlc2NyaXB0CnZhcmlhYmxlICJodHRwX3BvcnQiIHsKICB0eXBlICAgICAgICA9IHN0cmluZwp9Cgp2YXJpYWJsZSAiaHR0cHNfcG9ydCIgewogIHR5cGUgICAgICAgID0gc3RyaW5nCn0KCnZhcmlhYmxlICJkYl9wb3J0IiB7CiAgdHlwZSAgICAgICAgPSBzdHJpbmcKfQoKdmFyaWFibGUgInJlZ2lzdHJ5IiB7CiAgdHlwZSAgICAgICAgPSBzdHJpbmcKfQoKdmFyaWFibGUgImRiX2ltYWdlX25hbWUiIHsKICB0eXBlICAgICAgICA9IHN0cmluZwp9CnZhcmlhYmxlICJ3ZWJfaW1hZ2VfbmFtZSIgewogIHR5cGUgICAgICAgID0gc3RyaW5nCn0KdmFyaWFibGUgImxiX2ltYWdlX25hbWUiIHsKICB0eXBlICAgICAgICA9IHN0cmluZwp9CmBgYAo6OjogSU5GTwo+VGhpcyBmaWxlIGNvbnNpc3Qgb2YgW3ZhcmlhYmxlXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9jb25maWd1cmF0aW9uL3ZhcmlhYmxlcy5odG1sKSBkZWNsYXJhdGlvbiBibG9ja3MgCnVzZWQgYnkgW1RlcnJhZm9ybSBDb25maWd1cmF0aW9uIExhbmd1YWdlXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9jb25maWd1cmF0aW9uL2luZGV4Lmh0bWwpIAo6OjoKOjo6IENPREVfREVTQ0lQVElPTgoKIyMjIE92ZXJ3aWV3CioqdmFyaWFibGVzLnRmKiogZmlsZSBjb250YWlucyBkZWZpbml0aW9ucyBvZiB2YXJpYWJsZXMuICAgCkRlZmluaXRpb24gY29uc2lzdCBvZiBgdmFyaWFibGVgIHJlc291cmNlIGtleXdvcmQgYW5kIGlkZW50aWZpZXI6CgojIyMjICoqYHR5cGUgPSBTdHJpbmcgKHR5cGU6IHByZWRlZmluZWQgcHJpbWl0aXZlKWAqKgo+RmllbGQgd2hpY2ggZGV0ZXJtaW5lcyB0eXBlIG9mIHZhcmlhYmxlIAo6OjoKCiMjIG91dHB1dHMudGYKYGBgdHlwZXNjcmlwdApvdXRwdXQgImFwYWNoZV8xX2lwX2FkZHIiIHsKICB2YWx1ZSA9IGRvY2tlcl9jb250YWluZXIuYXBhY2hlXzEuaXBfYWRkcmVzcwp9CgpvdXRwdXQgImFwYWNoZV8yX2lwX2FkZHIiIHsKICB2YWx1ZSA9IGRvY2tlcl9jb250YWluZXIuYXBhY2hlXzIuaXBfYWRkcmVzcwp9Cm91dHB1dCAiTEJfaXBfYWRkciIgewogIHZhbHVlID0gZG9ja2VyX2NvbnRhaW5lci5MQi5pcF9hZGRyZXNzCn0KCmBgYAo6OjogSU5GTwo+VGhpcyBmaWxlIGNvbnNpc3Qgb2YgW291dHB1dF0oaHR0cHM6Ly93d3cudGVycmFmb3JtLmlvL2RvY3MvY29uZmlndXJhdGlvbi9vdXRwdXRzLmh0bWwpIGRlY2xhcmF0aW9uIGJsb2NrcyAKdXNlZCBieSBbVGVycmFmb3JtIENvbmZpZ3VyYXRpb24gTGFuZ3VhZ2VdKGh0dHBzOi8vd3d3LnRlcnJhZm9ybS5pby9kb2NzL2NvbmZpZ3VyYXRpb24vaW5kZXguaHRtbCkgCjo6Ogo6OjogQ09ERV9ERVNDSVBUSU9OCgojIyMgT3ZlcndpZXcKKipvdXRwdXRzLnRmKiogZmlsZSBjb250YWlucyBkZWNsYXJhdGlvbiBvZiBwcm9wZXJ0aWVzIHdoaWNoIHdpbGwgYmUgcHJvZHVjZWQgYXQgb3V0cHV0IG9mIGBhcHBseWAgY29tbWFuZC4gIAoKIyMjIyAqKmB2YWx1ZSA9IGRvY2tlcl9jb250YWluZXIuYXBhY2hlXzEuaXBfYWRkcmVzc2AgLSAodHlwZTogYW55KSoqCj4gRmllbGQgZm9yIGFzc2lnbmluZyB2YWx1ZSBmb3Igb3V0cHV0Cjo6OgoKCiMjIHRlcnJhZm9ybS50ZnZhcnMKYGBgdHlwZXNjcmlwdAogIGh0dHBfcG9ydCA9ICI4MCIKICBodHRwc19wb3J0ID0gIjQ0MyIKICBkYl9wb3J0ID0gIjMzMDYiCiAgcmVnaXN0cnkgPSAibG9jYWxob3N0OjUwMDAiCiAgd2ViX2ltYWdlX25hbWUgPSAibGFtcF90ZXJyL3dlYiIKICBkYl9pbWFnZV9uYW1lID0gImxhbXBfdGVyci9kYXRhYmFzZSIKICBsYl9pbWFnZV9uYW1lID0gImxhbXBfdGVyci9sb2FkYmFsYW5jZXIiCmBgYAo6OjogSU5GTwo+VGhpcyBmaWxlIGNvbnNpc3Qgb2YgW3ZhcmlhYmxlIGRlZmluaXRpb25zXShodHRwczovL3d3dy50ZXJyYWZvcm0uaW8vZG9jcy9jb25maWd1cmF0aW9uL3ZhcmlhYmxlcy5odG1sI3ZhcmlhYmxlLWRlZmluaXRpb25zLXRmdmFycy1maWxlcykKOjo6Cjo6OiBDT0RFX0RFU0NJUFRJT04KCiMjIyBPdmVyd2lldwoqKnRlcnJhZm9ybS50ZnZhcnMqKiBmaWxlIGNvbnRhaW5zIHZhbHVlcyBmb3IgdmFyaWFibGVzLiAgIAoqZmlsZSBgKi50ZnZhcnNgIGlzIHVzZWQgYnkgZGVmYXVsdCBpZiBpdCBpcyBpbiB0aGUgcm9vdCBmb2xkZXIgb2YgVGVycmFmb3JtIHByb2plY3QqCjo6Ogo=</div>
 
 
 

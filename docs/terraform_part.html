@@ -11,7 +11,6 @@
 
 <meta name="author" content="Mateusz Lewicki" />
 
-<meta name="date" content="2020-08-11" />
 
 <title>Terraform part</title>
 
@@ -2887,7 +2886,18 @@ h6 {
 }
 </style>
 
-<style type="text/css">.INFO > blockquote {padding: 20px;margin: 20px 0;border: 1px solid #eee;border-left-width: 5px;border-left-color: #aa6708;border-radius: 3px;}.CODE_DESCIPTION > blockquote{border-left-color: #DCCCA3;}</style>
+<style type="text/css">.INFO > blockquote {
+padding: 20px;
+margin: 20px 0;
+border: 1px solid #eee;
+border-left-width: 5px;
+border-left-color: #aa6708;
+border-radius: 3px;
+}
+.CODE_DESCIPTION > blockquote{
+border-left-color: #DCCCA3;
+}
+</style>
 
 
 
@@ -2998,7 +3008,7 @@ summary {
 
 <h1 class="title toc-ignore">Terraform part</h1>
 <h4 class="author">Mateusz Lewicki</h4>
-<h4 class="date">August 11, 2020</h4>
+<h4 class="date">sierpnia 11, 2020</h4>
 
 </div>
 
@@ -3023,20 +3033,20 @@ summary {
 <p>Terraform by Hashicorp is infrastructure description langauage in HLC format (Hashicorp DSL) used in widely name CI/CD for construction of all needed infrastructure components for application by using principles of infrastructure as code.</p>
 <div id="brief-of-terrafom-in-current-project" class="section level2">
 <h2>Brief of terrafom in current project</h2>
-<p>Project consist of 7/8 terraform files (7 as code and 8th for state):</p>
+<p>Project consist of 6/7 terraform files (6 as code and 7th for state):</p>
 <ul>
-<li><a href="../terraform/variables.tf">variables.tf</a></li>
+<li><a href="../terraform/main.tf">main.tf</a></li>
 <li><a href="../terraform/images.tf">images.tf</a></li>
+<li><a href="../terraform/networks.tf">networks.tf</a></li>
+<li><a href="../terraform/outputs.tf">outputs.tf</a></li>
+<li><a href="../terraform/variables.tf">variables.tf</a></li>
 <li><a href="../terraform/terraform.tfvars">terraform.tfvars</a></li>
 <li><a href="../terraform/terraform.tfstate">terraform.tfstate</a></li>
-<li><a href="../terraform/outputs.tf">outputs.tf</a></li>
-<li><a href="../terraform/networks.tf">networks.tf</a></li>
-<li><a href="../terraform/main.tf">main.tf</a></li>
 </ul>
 <p>In this project Terraform is used to build “2 tier” infrastructure with loadbalancing in docker.</p>
 <center>
-<div id="htmlwidget-c91b758ec0f48806b510" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c91b758ec0f48806b510">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-c7943d6a9dd2f23ec49c" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c7943d6a9dd2f23ec49c">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script>
 </center>
 <p>Terrraform code was split into parts (see above).<br />
 Terraform by default is looking through directory for every Terraform related files.<br />
@@ -3140,9 +3150,25 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <span id="cb2-17"><a href="#cb2-17"></a>  name <span class="op">=</span> <span class="st">&quot;${var.registry}/${var.lb_image_name}&quot;</span></span>
 <span id="cb2-18"><a href="#cb2-18"></a>  keep_locally <span class="op">=</span> <span class="kw">true</span></span>
 <span id="cb2-19"><a href="#cb2-19"></a><span class="op">}</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
 </blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-1">Overwiew</h3>
+<p><strong>images.tf</strong> file contains definitions of container images, which we can then use in <code>docker_container</code> resource.<br />
+File defines several <code>docker_image</code> blocks one for single image. This block in this case has two fields:</p>
+<h4 id="name-var.registryvar.web_image_name---type-string"><strong><code>name = &quot;${var.registry}/${var.web_image_name}&quot;</code> - (type: String)</strong></h4>
+<blockquote>
+<p>This field defines which image to use. In this particural entry we use custom registry and image name defined in own variables.<br />
+In the first resource block in source file you can find literall name of image <code>alpine:latest</code></p>
+</blockquote>
+<h4 id="keep_locally-true---type-boolean"><strong><code>keep_locally = true</code> - (type: Boolean)</strong></h4>
+<blockquote>
+<p>This field is informing provider to not remove images when <code>destroy</code> command is provided.</p>
+</blockquote>
+</div>
 </div>
 <div id="networks.tf" class="section level2">
 <h2>networks.tf</h2>
@@ -3170,6 +3196,23 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
+</blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-2">Overwiew</h3>
+<p><strong>networks.tf</strong> file contains definitions of docker networks, which we can then use in <code>docker_container</code> resource.<br />
+File defines several <code>docker_network</code> blocks one for single network. This block in this case has several fields such as:</p>
+<h4 id="name-app_network_1---type-string"><strong><code>name = &quot;app_network_1&quot;</code> - (type: String)</strong></h4>
+<blockquote>
+<p>This field defines name of network</p>
+</blockquote>
+<h4 id="internal-true---type-boolean"><strong><code>internal = true</code> - (type: Boolean)</strong></h4>
+<blockquote>
+<p>This field is informing provider that this network is private, and will not be accessible from outside (default public)</p>
+</blockquote>
+<h4 id="ipam_configsubnet10.0.0.3228---type-block---boolean"><strong><code>ipam_config{subnet=&quot;10.0.0.32/28&quot; }</code> - (type: Block -&gt; Boolean)</strong></h4>
+<blockquote>
+<p>This block is having <code>subnet</code> field which consist network_addr/mask</p>
 </blockquote>
 </div>
 </div>
@@ -3205,6 +3248,15 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html">variable</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
 </blockquote>
 </div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-3">Overwiew</h3>
+<p><strong>variables.tf</strong> file contains definitions of variables.<br />
+Definition consist of <code>variable</code> resource keyword and identifier:</p>
+<h4 id="type-string-type-predefined-primitive"><strong><code>type = String (type: predefined primitive)</code></strong></h4>
+<blockquote>
+<p>Field which determines type of variable</p>
+</blockquote>
+</div>
 </div>
 <div id="outputs.tf" class="section level2">
 <h2>outputs.tf</h2>
@@ -3223,6 +3275,14 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/outputs.html">output</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
 </blockquote>
 </div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-4">Overwiew</h3>
+<p><strong>outputs.tf</strong> file contains declaration of properties which will be produced at output of <code>apply</code> command.</p>
+<h4 id="value-docker_container.apache_1.ip_address---type-any"><strong><code>value = docker_container.apache_1.ip_address</code> - (type: any)</strong></h4>
+<blockquote>
+<p>Field for assigning value for output</p>
+</blockquote>
+</div>
 </div>
 <div id="terraform.tfvars" class="section level2">
 <h2>terraform.tfvars</h2>
@@ -3237,6 +3297,11 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files">variable definitions</a></p>
 </blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-5">Overwiew</h3>
+<p><strong>terraform.tfvars</strong> file contains values for variables.<br />
+<em>file <code>*.tfvars</code> is used by default if it is in the root folder of Terraform project</em></p>
 </div>
 </div>
 </div>
