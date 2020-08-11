@@ -1,0 +1,174 @@
+---
+title: "Terraform part"
+author: "Mateusz Lewicki"
+date: "July 11, 2020"
+output:
+  html_document:
+    theme: united
+    highlight: pygments
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Puprouse of using Terraform
+
+## Brief of terrafom in current project
+
+- [variables.tf](../terraform/variables.tf)
+- [images.tf](../terraform/images.tf)
+- [terraform.tfvars](../terraform/terraform.tfvars)
+- [terraform.tfstate](../terraform/terraform.tfstate)
+- [outputs.tf](../terraform/outputs.tf)
+- [networks.tf](../terraform/networks.tf)
+- [main.tf](../terraform/main.tf)
+
+
+# File description
+
+## main.tf (part of)
+```typescript
+provider "docker" {
+}
+
+
+resource "docker_container" "LB" {
+  image = docker_image.lb.latest
+  name  = "LB"
+  networks_advanced{
+      name=docker_network.public_network.name
+  }
+  networks_advanced{
+      name=docker_network.app_network_1.name
+  }
+  networks_advanced{
+      name=docker_network.app_network_2.name
+  }
+  ports{
+      internal= var.http_port
+      external= var.http_port
+  }
+  ports{
+      internal = var.https_port
+      external = var.https_port
+  }
+   ports{
+      internal = 1936
+      external = 1936
+  }
+  host{
+    host="app1"
+    ip=docker_container.apache_1.ip_address
+  }
+  host{
+    host="app2"
+    ip=docker_container.apache_2.ip_address
+  }
+}
+
+[...]
+
+```
+## images.tf
+```typescript
+resource "docker_image" "alpine" {
+  name = "alpine:latest"
+  keep_locally = true
+}
+
+resource "docker_image" "web" {
+  name = "${var.registry}/${var.web_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "db" {
+  name = "${var.registry}/${var.db_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "lb" {
+  name = "${var.registry}/${var.lb_image_name}"
+  keep_locally = true
+}
+```
+
+## networks.tf
+```typescript
+resource "docker_network" "app_network_1" {
+  name = "app_network_1"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.0/28"
+  }
+}
+
+resource "docker_network" "app_network_2" {
+  name = "app_network_2"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.16/28"
+  }
+}
+resource "docker_network" "public_network" {
+  name = "public_network"
+  ipam_config{
+      subnet="10.0.0.32/28"
+  }
+}
+```
+## variables.tf
+```typescript
+variable "http_port" {
+  type        = string
+}
+
+variable "https_port" {
+  type        = string
+}
+
+variable "db_port" {
+  type        = string
+}
+
+variable "registry" {
+  type        = string
+}
+
+variable "db_image_name" {
+  type        = string
+}
+variable "web_image_name" {
+  type        = string
+}
+variable "lb_image_name" {
+  type        = string
+}
+```
+## outputs.tf
+```typescript
+output "apache_1_ip_addr" {
+  value = docker_container.apache_1.ip_address
+}
+
+output "apache_2_ip_addr" {
+  value = docker_container.apache_2.ip_address
+}
+output "LB_ip_addr" {
+  value = docker_container.LB.ip_address
+}
+
+```
+## terraform.tfvars
+```typescript
+  http_port = "80"
+  https_port = "443"
+  db_port = "3306"
+  registry = "localhost:5000"
+  web_image_name = "lamp_terr/web"
+  db_image_name = "lamp_terr/database"
+  lb_image_name = "lamp_terr/loadbalancer"
+```
