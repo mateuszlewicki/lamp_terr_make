@@ -2887,6 +2887,7 @@ h6 {
 }
 </style>
 
+<style type="text/css">.INFO > blockquote {padding: 20px;margin: 20px 0;border: 1px solid #eee;border-left-width: 5px;border-left-color: #aa6708;border-radius: 3px;}.CODE_DESCIPTION > blockquote{border-left-color: #DCCCA3;}</style>
 
 
 
@@ -3007,9 +3008,7 @@ summary {
 <li><a href="#brief-of-terrafom-in-current-project">Brief of terrafom in current project</a></li>
 </ul></li>
 <li><a href="#file-description">File description</a><ul>
-<li><a href="#main.tf-part-of">main.tf (part of)</a><ul>
-<li><a href="#overwiew">Overwiew</a></li>
-</ul></li>
+<li><a href="#main.tf-part-of">main.tf (part of)</a></li>
 <li><a href="#images.tf">images.tf</a></li>
 <li><a href="#networks.tf">networks.tf</a></li>
 <li><a href="#variables.tf">variables.tf</a></li>
@@ -3036,8 +3035,8 @@ summary {
 </ul>
 <p>In this project Terraform is used to build “2 tier” infrastructure with loadbalancing in docker.</p>
 <center>
-<div id="htmlwidget-a96f80badf941eb4bc4e" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-a96f80badf941eb4bc4e">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-3b4f600a046578194170" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3b4f600a046578194170">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script>
 </center>
 <p>Terrraform code was split into parts (see above).<br />
 Terraform by default is looking through directory for every Terraform related files.<br />
@@ -3088,32 +3087,34 @@ Without <a href="https://www.terraform.io/docs/configuration/backend.html">backe
 <span id="cb1-37"><a href="#cb1-37"></a><span class="op">}</span></span>
 <span id="cb1-38"><a href="#cb1-38"></a></span>
 <span id="cb1-39"><a href="#cb1-39"></a><span class="op">[...]</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/providers/index.html">provider</a> and <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a> and <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
 </blockquote>
-<div id="overwiew" class="section level3">
-<h3>Overwiew</h3>
-<p><strong>main.tf</strong> file is the (as the name suggests) main file of whole infrastructure. At the top we have <code>provider</code> block it is saying that we want to use a docker provider in the latest version (as we don’t specified the version)<br />
-Here we have a snippet of on of the <code>docker_container</code> resource with identifier <code>LB</code>. This resource is part of Docker provider described above. It’s built with several fields and block:</p>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew">Overwiew</h3>
+<p><strong>main.tf</strong> file is (as the name suggests) the main file of whole infrastructure builded in this project. At the top we have <code>provider</code> block it is saying that we want to use a docker provider in the latest version (as we don’t specified the version)<br />
+Here we have a snippet of on of the <strong><code>docker_container</code></strong> resource with identifier <strong><code>LB</code></strong>. This resource is part of Docker provider described above. It’s built with several fields and block:</p>
+<h4 id="image-docker_image.lb.latest---type-string"><strong><code>image = docker_image.lb.latest</code> - (type: String) </strong></h4>
 <blockquote>
-<p><strong><code>image = docker_image.lb.latest</code> - (type: String) </strong></p>
 <p>It is a name (or project/name) of the docker image to use. In this case we are referring to <code>docker_image</code> resource with <code>lb</code> identifier and the <code>latest</code> version. <code>.latest</code> can be replaced by <code>:latest</code> tag</p>
 </blockquote>
+<h4 id="name-lb---type-string"><strong><code>name = &quot;LB&quot;</code> - (type: String)</strong></h4>
 <blockquote>
-<p><strong><code>name  = &quot;LB&quot;</code> - (type: String)</strong></p>
 <p>Literal name</p>
 </blockquote>
+<h4 id="networks_advancednamedocker_network.public_network.name---typeblock-string"><strong><code>networks_advanced{name=docker_network.public_network.name }</code> - (type:block-&gt;String)</strong></h4>
 <blockquote>
-<p><strong><code>networks_advanced{name=docker_network.public_network.name }</code> - (type:block-&gt;String)</strong></p>
 <p>Block where we define to which network container should be attached (one block for one network).<br />
 Inside we have <code>name</code> field where we ae using name of network (in this case public) from resource <code>docker_network</code> defined in <em>networks.tf</em> file</p>
 </blockquote>
+<h4 id="ports-internal-var.http_port-external-var.http_port---typeblock-intint"><strong><code>ports{ internal= var.http_port external= var.http_port }</code> - (type:block-&gt;Int,Int)</strong></h4>
 <blockquote>
-<p><strong><code>ports{ internal= var.http_port external= var.http_port }</code> - (type:block-&gt;Int,Int)</strong></p>
 <p>Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable <code>http_port</code></p>
 </blockquote>
+<h4 id="host-hostapp1-ipdocker_container.apache_1.ip_address---typeblock-stringstring"><strong><code>host{ host=&quot;app1&quot; ip=docker_container.apache_1.ip_address }</code>- (type:block-&gt;String,String)</strong></h4>
 <blockquote>
-<p><strong><code>host{ host=&quot;app1&quot; ip=docker_container.apache_1.ip_address }</code>- (type:block-&gt;String,String)</strong></p>
 <p>Block used for additional <code>/etc/hosts</code> entries. Here we are using <code>ip_address</code> from <code>apache_1</code> the <code>docker_container</code> resource</p>
 </blockquote>
 </div>
@@ -3166,9 +3167,11 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <span id="cb3-19"><a href="#cb3-19"></a>      subnet<span class="op">=</span><span class="st">&quot;10.0.0.32/28&quot;</span></span>
 <span id="cb3-20"><a href="#cb3-20"></a>  <span class="op">}</span></span>
 <span id="cb3-21"><a href="#cb3-21"></a><span class="op">}</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/resources.html">resource</a> declaration blocks used by <a href="https://www.terraform.io/docs/providers/docker/index.html">Docker Provider</a></p>
 </blockquote>
+</div>
 </div>
 <div id="variables.tf" class="section level2">
 <h2>variables.tf</h2>
@@ -3197,9 +3200,11 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <span id="cb4-23"><a href="#cb4-23"></a>variable <span class="st">&quot;lb_image_name&quot;</span> <span class="op">{</span></span>
 <span id="cb4-24"><a href="#cb4-24"></a>  <span class="kw">type</span>        <span class="op">=</span> <span class="dt">string</span></span>
 <span id="cb4-25"><a href="#cb4-25"></a><span class="op">}</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html">variable</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
 </blockquote>
+</div>
 </div>
 <div id="outputs.tf" class="section level2">
 <h2>outputs.tf</h2>
@@ -3213,9 +3218,11 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <span id="cb5-8"><a href="#cb5-8"></a>output <span class="st">&quot;LB_ip_addr&quot;</span> <span class="op">{</span></span>
 <span id="cb5-9"><a href="#cb5-9"></a>  value <span class="op">=</span> <span class="va">docker_container</span><span class="op">.</span><span class="va">LB</span><span class="op">.</span><span class="at">ip_address</span></span>
 <span id="cb5-10"><a href="#cb5-10"></a><span class="op">}</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/outputs.html">output</a> declaration blocks used by <a href="https://www.terraform.io/docs/configuration/index.html">Terraform Configuration Language</a></p>
 </blockquote>
+</div>
 </div>
 <div id="terraform.tfvars" class="section level2">
 <h2>terraform.tfvars</h2>
@@ -3226,9 +3233,11 @@ Inside we have <code>name</code> field where we ae using name of network (in thi
 <span id="cb6-5"><a href="#cb6-5"></a>  web_image_name <span class="op">=</span> <span class="st">&quot;lamp_terr/web&quot;</span></span>
 <span id="cb6-6"><a href="#cb6-6"></a>  db_image_name <span class="op">=</span> <span class="st">&quot;lamp_terr/database&quot;</span></span>
 <span id="cb6-7"><a href="#cb6-7"></a>  lb_image_name <span class="op">=</span> <span class="st">&quot;lamp_terr/loadbalancer&quot;</span></span></code></pre></div>
+<div class="INFO">
 <blockquote>
 <p>This file consist of <a href="https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files">variable definitions</a></p>
 </blockquote>
+</div>
 </div>
 </div>
 

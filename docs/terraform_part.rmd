@@ -3,10 +3,11 @@ title: "Terraform part"
 author: "Mateusz Lewicki"
 date:  "`r Sys.setlocale('LC_TIME', 'English'); format(Sys.time(), '%B %d, %Y')`"
 output:
-  html_document:
+  html_document: 
     theme: united
     highlight: pygments
     toc: yes
+    css: blocks.css
   #  toc_float: yes
   #  number_sections: yes
 ---
@@ -106,43 +107,41 @@ resource "docker_container" "LB" {
 [...]
 
 ```
+::: INFO
 >This file consist of [provider](https://www.terraform.io/docs/providers/index.html) 
 and [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
 and [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html)
+:::
 
+::: CODE_DESCIPTION
 ### Overwiew
-**main.tf** file is the (as the name suggests) main file of whole infrastructure. 
+**main.tf** file is (as the name suggests) the main file of whole infrastructure builded in this project. 
 At the top we have `provider` block it is saying that we want to use a docker provider in the latest version (as we don't specified the version)   
-Here we have a snippet of on of the `docker_container` resource with identifier `LB`. This resource is part of Docker provider described above. 
+Here we have a snippet of on of the **`docker_container`** resource with identifier **`LB`**. This resource is part of Docker provider described above. 
 It's built with several fields and block:  
 
->  **`image = docker_image.lb.latest` - (type: String)  **
->
+####  **`image = docker_image.lb.latest` - (type: String)  **
+
 >It is a name (or project/name) of the docker image to use. In this case we are referring to `docker_image` resource with `lb` identifier and the `latest`     version. `.latest` can be replaced by `:latest` tag
 
-> **`name  = "LB"` - (type: String)**
->
+#### **`name = "LB"` - (type: String)**
+
 >Literal name 
 
-> **`networks_advanced{name=docker_network.public_network.name }` - (type:block->String)**
-> 
+#### **`networks_advanced{name=docker_network.public_network.name }` - (type:block->String)**
+ 
 > Block where we define to which network container should be attached (one block for one network).  
 > Inside we have `name` field where we ae using name of network (in this case public) from resource `docker_network` defined in *networks.tf* file
 
-> **`  ports{
-      internal= var.http_port
-      external= var.http_port
-  }` - (type:block->Int,Int)**
->
+#### **`  ports{ internal= var.http_port external= var.http_port }` - (type:block->Int,Int)**
+
 > Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable `http_port`
 
-> **`  host{
-    host="app1"
-    ip=docker_container.apache_1.ip_address
-  }`- (type:block->String,String)**   
->
+#### **`host{ host="app1" ip=docker_container.apache_1.ip_address }`- (type:block->String,String)**  
+
 > Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` the `docker_container` resource 
+:::
 
 
 ## images.tf
@@ -194,8 +193,10 @@ resource "docker_network" "public_network" {
   }
 }
 ```
+::: INFO
 >This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html) 
+:::
 
 ## variables.tf
 ```typescript
@@ -225,8 +226,10 @@ variable "lb_image_name" {
   type        = string
 }
 ```
+::: INFO
 >This file consist of [variable](https://www.terraform.io/docs/configuration/variables.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
+:::
 
 ## outputs.tf
 ```typescript
@@ -242,9 +245,10 @@ output "LB_ip_addr" {
 }
 
 ```
+::: INFO
 >This file consist of [output](https://www.terraform.io/docs/configuration/outputs.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
-
+:::
 
 ## terraform.tfvars
 ```typescript
@@ -256,6 +260,6 @@ used by [Terraform Configuration Language](https://www.terraform.io/docs/configu
   db_image_name = "lamp_terr/database"
   lb_image_name = "lamp_terr/loadbalancer"
 ```
+::: INFO
 >This file consist of [variable definitions](https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files)
-
-
+:::

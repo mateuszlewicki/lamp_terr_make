@@ -1,0 +1,15 @@
+.INFO > blockquote {
+  
+	padding: 20px;
+	margin: 20px 0;
+	border: 1px solid #eee;
+	border-left-width: 5px;
+	border-left-color: #aa6708;
+	border-radius: 3px;
+}
+.CODE_DESCIPTION > blockquote{
+  border-left-color: #DCCCA3;
+}
+/*.CODE_DESCIPTION h4>strong > code{
+  background: #345995;
+}*/
