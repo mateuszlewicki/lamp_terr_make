@@ -1,7 +1,7 @@
 ---
 title: "Terraform part"
 author: "Mateusz Lewicki"
-date:  "`r format(Sys.Date(), '%B %d, %Y')`"
+date:  "sierpień 12, 2020"
 output:
   html_document: 
     theme: united
@@ -11,15 +11,9 @@ output:
     keep_md: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r, inlcude=FALSE, echo=FALSE}
-dump_file_cont <- function(type, file){
-  return(cat(paste(paste("```",type,sep=""), paste(readLines(file), collapse="\n"), "```", sep="\n")))
-}
-```
+
+
 
 
 
@@ -42,27 +36,8 @@ Project consist of 6/7 terraform files (6 as code and 7th for state):
 In this project Terraform is used to build "2 tier" infrastructure with loadbalancing in docker.
 
 <center>
-```{r,echo=FALSE }
-DiagrammeR::mermaid(diagram = '
-graph LR;
-    A[Client]-->|public| B[HAproxy]
-    B-->|private| C[Apache+PHP7]
-    C-->E[MySQL]
-    B-->|private| D[Apache+PHP7]
-    D-->F[MySQL]
-    subgraph 10.0.0.32/26
-    B
-    end
-    subgraph 10.0.0.0/26
-    C
-    E
-    end
-    subgraph 10.0.0.16/26
-    D
-    F
-    end
-')
-```
+<!--html_preserve--><div id="htmlwidget-227c7f79faec01a61dee" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-227c7f79faec01a61dee">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 </center>
 
 Terrraform code was split into parts (see above).  
@@ -153,8 +128,26 @@ It's built with several fields and block:
 
 
 ## images.tf
-```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
-dump_file_cont("typescript", "../terraform/images.tf")
+```typescript
+resource "docker_image" "alpine" {
+  name = "alpine:latest"
+  keep_locally = true
+}
+
+resource "docker_image" "web" {
+  name = "${var.registry}/${var.web_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "db" {
+  name = "${var.registry}/${var.db_image_name}"
+  keep_locally = true
+}
+
+resource "docker_image" "lb" {
+  name = "${var.registry}/${var.lb_image_name}"
+  keep_locally = true
+}
 ```
 ::: INFO
 >This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
@@ -175,8 +168,28 @@ File defines several `docker_image` blocks one for single image. This block in t
 :::
 
 ## networks.tf
-```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
-dump_file_cont("typescript", "../terraform/networks.tf")
+```typescript
+resource "docker_network" "app_network_1" {
+  name = "app_network_1"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.0/28"
+  }
+}
+
+resource "docker_network" "app_network_2" {
+  name = "app_network_2"
+  internal = true
+  ipam_config{
+      subnet="10.0.0.16/28"
+  }
+}
+resource "docker_network" "public_network" {
+  name = "public_network"
+  ipam_config{
+      subnet="10.0.0.32/28"
+  }
+}
 ```
 ::: INFO
 >This file consist of [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
@@ -199,8 +212,32 @@ File defines several `docker_network` blocks one for single network. This block 
 :::
 
 ## variables.tf
-```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
-dump_file_cont("typescript", "../terraform/variables.tf")
+```typescript
+variable "http_port" {
+  type        = string
+}
+
+variable "https_port" {
+  type        = string
+}
+
+variable "db_port" {
+  type        = string
+}
+
+variable "registry" {
+  type        = string
+}
+
+variable "db_image_name" {
+  type        = string
+}
+variable "web_image_name" {
+  type        = string
+}
+variable "lb_image_name" {
+  type        = string
+}
 ```
 ::: INFO
 >This file consist of [variable](https://www.terraform.io/docs/configuration/variables.html) declaration blocks 
@@ -217,8 +254,17 @@ Definition consist of `variable` resource keyword and identifier:
 :::
 
 ## outputs.tf
-```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
-dump_file_cont("typescript", "../terraform/outputs.tf")
+```typescript
+output "apache_1_ip_addr" {
+  value = docker_container.apache_1.ip_address
+}
+
+output "apache_2_ip_addr" {
+  value = docker_container.apache_2.ip_address
+}
+output "LB_ip_addr" {
+  value = docker_container.LB.ip_address
+}
 ```
 ::: INFO
 >This file consist of [output](https://www.terraform.io/docs/configuration/outputs.html) declaration blocks 
@@ -235,8 +281,14 @@ used by [Terraform Configuration Language](https://www.terraform.io/docs/configu
 
 
 ## terraform.tfvars
-```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
-dump_file_cont("typescript", "../terraform/terraform.tfvars")
+```typescript
+  http_port = "80"
+  https_port = "443"
+  db_port = "3306"
+  registry = "localhost:5000"
+  web_image_name = "lamp_terr/web"
+  db_image_name = "lamp_terr/database"
+  lb_image_name = "lamp_terr/loadbalancer"
 ```
 ::: INFO
 >This file consist of [variable definitions](https://www.terraform.io/docs/configuration/variables.html#variable-definitions-tfvars-files)

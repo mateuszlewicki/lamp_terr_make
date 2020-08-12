@@ -1,0 +1,75 @@
+---
+title: "GNU Make part"
+author: "Mateusz Lewicki"
+date:  "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document: 
+    theme: united
+    highlight: pygments
+    toc: yes
+    css: blocks.css
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, inlcude=FALSE, echo=FALSE}
+dump_file_cont <- function(type, file){
+  return(cat(paste(paste("```",type,sep=""), paste(readLines(file), collapse="\n"), "```", sep="\n")))
+}
+```
+# Puprouse of using GNU Make
+
+GNU Make is a tool which controls the generation of executables and other non-source files of a program from the program's source files.
+
+Make gets its knowledge of how to build your program from a file called the makefile, which lists each of the non-source files and how to compute it from other files. When you write a program, you should write a makefile for it, so that it is possible to use Make to build and install the program.
+
+We can also say that GNU Make is a some kind of pipeline and can be use with conjunction with other pipeline as in Azure, Jenkins,  AWS, Gitlab with specifing a target for every stage.
+
+You can find more about GNU Make Here:
+
+- <https://www.gnu.org/software/make/>
+- <https://www.gnu.org/software/make/manual/make.html>
+- <https://makefiletutorial.com/>
+- <https://www.cl.cam.ac.uk/teaching/0910/UnixTools/make.pdf>
+
+## Brief overwiew of GNU Make in current project
+
+Makefiles are described with `targets`, `dependencies` and `actions`.
+
+In current project there are 4 Makefiles 1 - main and other 3 for building docker images
+
+## Makefile
+```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
+dump_file_cont("makefile", "../Makefile")
+```
+::: INFO
+>This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [docker](https://docs.docker.com/engine/) and [terraform](https://www.terraform.io/docs/index.html) cli tools.
+:::
+
+## loadbalancer/Makefile
+```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
+dump_file_cont("makefile", "../images/loadbalancer/Makefile")
+```
+::: INFO
+>This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
+:::
+
+## web/Makefile
+```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
+dump_file_cont("makefile", "../images/web/Makefile")
+```
+::: INFO
+>This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
+:::
+
+
+## database/Makefile
+```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
+dump_file_cont("makefile", "../images/database/Makefile")
+```
+::: INFO
+>This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
+:::
