@@ -457,7 +457,7 @@ summary {
 
 <h1 class="title toc-ignore">GNU Make part</h1>
 <h4 class="author">Mateusz Lewicki</h4>
-<h4 class="date">sierpień 12, 2020</h4>
+<h4 class="date">sierpnia 13, 2020</h4>
 
 </div>
 
@@ -466,7 +466,9 @@ summary {
 <li><a href="#puprouse-of-using-gnu-make">Puprouse of using GNU Make</a><ul>
 <li><a href="#brief-overwiew-of-gnu-make-in-current-project">Brief overwiew of GNU Make in current project</a></li>
 <li><a href="#makefile">Makefile</a></li>
-<li><a href="#loadbalancermakefile">loadbalancer/Makefile</a></li>
+<li><a href="#loadbalancermakefile">loadbalancer/Makefile</a><ul>
+<li><a href="#overwiew-1">Overwiew</a></li>
+</ul></li>
 <li><a href="#webmakefile">web/Makefile</a></li>
 <li><a href="#databasemakefile">database/Makefile</a></li>
 </ul></li>
@@ -524,6 +526,36 @@ summary {
 <p>This is <a href="https://www.gnu.org/software/make/">GNU Make Makefile</a> with usage of <a href="https://docs.docker.com/engine/">docker</a> and <a href="https://www.terraform.io/docs/index.html">terraform</a> cli tools.</p>
 </blockquote>
 </div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew">Overwiew</h3>
+<h4 id="deploy-build_images"><strong><code>deploy: build_images</code></strong></h4>
+<blockquote>
+<p>First targe, whcih will be used when <code>make</code> command will be used without parameters or <code>make deploy</code> direclty.<br />
+This target is rewuairng to execute <code>build_images</code> target first Here is only one script <code>cd terraform; terraform apply -auto-approve</code> wchich is going inside terraform folder and executing <code>terraform apply</code> command</p>
+</blockquote>
+<h4 id="plan"><strong><code>plan:</code></strong></h4>
+<blockquote>
+<p>Script similar as above but here we are only exeuting <code>terraform plan</code> command</p>
+</blockquote>
+<h4 id="build_images-build_apache-build_mysql-build_lb"><strong><code>build_images: build_apache build_mysql build_lb</code></strong></h4>
+<blockquote>
+<p>Auxilary target which is invoking other targets</p>
+</blockquote>
+<h4 id="build_apache"><strong><code>build_apache:</code></strong></h4>
+<h4 id="build_mysql"><strong><code>build_mysql:</code></strong></h4>
+<h4 id="build_lb"><strong><code>build_lb:</code></strong></h4>
+<blockquote>
+<p>Three targets for building the docekr images using <code>docker build</code> command, tag the container and push it to repositroy (in this case localhost)</p>
+</blockquote>
+<h4 id="phony-clean"><strong><code>.PHONY: clean</code></strong></h4>
+<blockquote>
+<p>Directive to not save state and execute target <code>clean</code> every time (even if was executet moment ago)</p>
+</blockquote>
+<h4 id="clean"><strong><code>clean:</code></strong></h4>
+<blockquote>
+<p>target for destroing the environment using <code>terraform destroy</code> command</p>
+</blockquote>
+</div>
 </div>
 <div id="loadbalancermakefile" class="section level2">
 <h2>loadbalancer/Makefile</h2>
@@ -549,6 +581,30 @@ summary {
 <p>This is <a href="https://www.gnu.org/software/make/">GNU Make Makefile</a> with usage of <a href="https://www.unix.com/man-page/linux/1/sh/">sh</a> inside <a href="https://wiki.alpinelinux.org/wiki/Main_Page">alpine linux</a>.</p>
 </blockquote>
 </div>
+<div id="overwiew-1" class="section level3">
+<h3>Overwiew</h3>
+<div id="publish" class="section level4">
+<h4><strong><code>publish:</code></strong></h4>
+</div>
+<div id="dev-no_daemon-add_dev_stats" class="section level4">
+<h4><strong><code>dev: no_daemon add_dev_stats</code></strong></h4>
+</div>
+<div id="install_proxy" class="section level4">
+<h4><strong><code>install_proxy:</code></strong></h4>
+</div>
+<div id="no_daemon-install_proxy" class="section level4">
+<h4><strong><code>no_daemon: install_proxy</code></strong></h4>
+</div>
+<div id="add_frontent-install_proxy" class="section level4">
+<h4><strong><code>add_frontent: install_proxy</code></strong></h4>
+</div>
+<div id="add_dev_backend-add_frontent" class="section level4">
+<h4><strong><code>add_dev_backend: add_frontent</code></strong></h4>
+</div>
+<div id="add_dev_stats-add_dev_backend" class="section level4">
+<h4><strong><code>add_dev_stats: add_dev_backend</code></strong></h4>
+</div>
+</div>
 </div>
 <div id="webmakefile" class="section level2">
 <h2>web/Makefile</h2>
@@ -573,6 +629,15 @@ summary {
 <blockquote>
 <p>This is <a href="https://www.gnu.org/software/make/">GNU Make Makefile</a> with usage of <a href="https://www.unix.com/man-page/linux/1/sh/">sh</a> inside <a href="https://wiki.alpinelinux.org/wiki/Main_Page">alpine linux</a>.</p>
 </blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-2">Overwiew</h3>
+<h4 id="publish-dummy-file"><strong><code>publish: dummy-file</code></strong></h4>
+<h4 id="apache"><strong><code>apache:</code></strong></h4>
+<h4 id="php-base-apache"><strong><code>php-base: apache</code></strong></h4>
+<h4 id="php-add-php-base"><strong><code>php-add: php-base</code></strong></h4>
+<h4 id="enable_php-php-add"><strong><code>enable_php: php-add</code></strong></h4>
+<h4 id="dummy-file-enable_php"><strong><code>dummy-file: enable_php</code></strong></h4>
 </div>
 </div>
 <div id="databasemakefile" class="section level2">
@@ -608,6 +673,19 @@ summary {
 <blockquote>
 <p>This is <a href="https://www.gnu.org/software/make/">GNU Make Makefile</a> with usage of <a href="https://www.unix.com/man-page/linux/1/sh/">sh</a> inside <a href="https://wiki.alpinelinux.org/wiki/Main_Page">alpine linux</a>.</p>
 </blockquote>
+</div>
+<div class="CODE_DESCIPTION">
+<h3 id="overwiew-3">Overwiew</h3>
+<h4 id="publish-bootstrap-db_start-db_test-db_stop"><strong><code>publish: bootstrap db_start db_test db_stop</code></strong></h4>
+<h4 id="mysql-server"><strong><code>mysql-server:</code></strong></h4>
+<h4 id="mysql-client-mysql-server"><strong><code>mysql-client: mysql-server</code></strong></h4>
+<h4 id="mysql-base-init-mysql-client"><strong><code>mysql-base-init: mysql-client</code></strong></h4>
+<h4 id="bootstrap-mysql-base-init"><strong><code>bootstrap: mysql-base-init</code></strong></h4>
+<h4 id="allow_connectivity-bootstrap"><strong><code>allow_connectivity: bootstrap</code></strong></h4>
+<h4 id="phony-db_start-db_stop-db_test"><strong><code>.PHONY: db_start db_stop db_test</code></strong></h4>
+<h4 id="db_start-allow_connectivity"><strong><code>db_start: allow_connectivity</code></strong></h4>
+<h4 id="db_stop"><strong><code>db_stop:</code></strong></h4>
+<h4 id="db_test-db_start"><strong><code>db_test: db_start</code></strong></h4>
 </div>
 </div>
 </div>

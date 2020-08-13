@@ -1,7 +1,7 @@
 ---
 title: "GNU Make part"
 author: "Mateusz Lewicki"
-date:  "sierpień 12, 2020"
+date:  "sierpnia 13, 2020"
 output:
   html_document: 
     theme: united
@@ -68,6 +68,30 @@ clean:
 ::: INFO
 >This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [docker](https://docs.docker.com/engine/) and [terraform](https://www.terraform.io/docs/index.html) cli tools.
 :::
+::: CODE_DESCIPTION
+### Overwiew
+####  **`deploy: build_images`**
+> First targe, whcih will be used when `make` command will be used without parameters or `make deploy` direclty.  
+> This target is rewuairng to execute `build_images` target first 
+> Here is only one script `cd terraform; terraform apply -auto-approve` wchich is going inside terraform folder and executing `terraform apply` command
+
+####  **`plan:`**
+> Script similar as above but here we are only exeuting `terraform plan` command
+
+####  **`build_images: build_apache build_mysql build_lb`**
+> Auxilary target which is invoking other targets
+
+####  **`build_apache:`**
+####  **`build_mysql:`**
+####  **`build_lb:`**
+> Three targets for building the docekr images using `docker build` command, tag the container and push it to repositroy (in this case localhost)
+
+####  **`.PHONY: clean`**
+> Directive to not save state and execute target `clean` every time (even if was executet moment ago)
+
+####  **`clean:`**
+> target for destroing the environment using `terraform destroy` command
+:::
 
 ## loadbalancer/Makefile
 ```makefile
@@ -93,6 +117,22 @@ add_dev_stats: add_dev_backend
 >This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
 :::
 
+### Overwiew
+
+####  **`publish:`**
+
+####  **`dev: no_daemon add_dev_stats`**
+
+####  **`install_proxy:`**
+
+####  **`no_daemon: install_proxy`**
+
+####  **`add_frontent: install_proxy`**
+
+####  **`add_dev_backend: add_frontent`**
+
+####  **`add_dev_stats: add_dev_backend`**
+
 ## web/Makefile
 ```makefile
 publish: dummy-file
@@ -117,6 +157,21 @@ dummy-file: enable_php
 >This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
 :::
 
+::: CODE_DESCIPTION
+### Overwiew
+
+####  **`publish: dummy-file`**
+
+####  **`apache:`**
+
+####  **`php-base: apache`**
+
+####  **`php-add: php-base`**
+
+####  **`enable_php: php-add`**
+
+####  **`dummy-file: enable_php`**
+:::
 
 ## database/Makefile
 ```makefile
@@ -150,4 +205,28 @@ db_test: db_start
 ```
 ::: INFO
 >This is [GNU Make Makefile](https://www.gnu.org/software/make/) with usage of [sh](https://www.unix.com/man-page/linux/1/sh/) inside [alpine linux](https://wiki.alpinelinux.org/wiki/Main_Page).
+:::
+
+::: CODE_DESCIPTION
+### Overwiew
+
+####  **`publish: bootstrap db_start db_test db_stop`**
+
+####  **`mysql-server:`**
+
+####  **`mysql-client: mysql-server`**
+
+####  **`mysql-base-init: mysql-client`**
+
+####  **`bootstrap: mysql-base-init`**
+
+####  **`allow_connectivity: bootstrap`**
+
+####  **`.PHONY: db_start db_stop db_test`**
+
+####  **`db_start: allow_connectivity`**
+
+####  **`db_stop:`**
+
+####  **`db_test: db_start`**
 :::
