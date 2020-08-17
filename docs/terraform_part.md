@@ -1,7 +1,7 @@
 ---
 title: "Terraform part"
 author: "Mateusz Lewicki"
-date:  "sierpień 12, 2020"
+date:  "sierpień 17, 2020"
 output:
   html_document: 
     theme: united
@@ -36,8 +36,8 @@ Project consist of 6/7 terraform files (6 as code and 7th for state):
 In this project Terraform is used to build "2 tier" infrastructure with loadbalancing in docker.
 
 <center>
-<!--html_preserve--><div id="htmlwidget-227c7f79faec01a61dee" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-227c7f79faec01a61dee">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve--><div id="htmlwidget-028d80879319974713bb" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-028d80879319974713bb">{"x":{"diagram":"\ngraph LR;\n    A[Client]-->|public| B[HAproxy]\n    B-->|private| C[Apache+PHP7]\n    C-->E[MySQL]\n    B-->|private| D[Apache+PHP7]\n    D-->F[MySQL]\n    subgraph 10.0.0.32/26\n    B\n    end\n    subgraph 10.0.0.0/26\n    C\n    E\n    end\n    subgraph 10.0.0.16/26\n    D\n    F\n    end\n"},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 </center>
 
 Terrraform code was split into parts (see above).  
@@ -47,11 +47,34 @@ Without [backend](https://www.terraform.io/docs/configuration/backend.html) decl
 
 # File description
 
-## main.tf (part of)
+## main.tf
 ```typescript
-provider "docker" {
-}
+# terraform {
+#   backend "local" {
+#     path = "terraform.tfstate"
+#   }
+# }
 
+
+provider "docker" {
+#   host = "tcp://127.0.0.1:2376/"
+#private laptop
+# host = "ssh://mlewicki@192.168.1.76:22"
+}
+# variables
+
+## moved > ./variables.tf
+
+# Images
+
+## moved > ./images.tf
+
+#Networks
+
+## moved > ./networks.tf
+
+
+#machines
 
 resource "docker_container" "LB" {
   image = docker_image.lb.latest
@@ -79,19 +102,47 @@ resource "docker_container" "LB" {
   }
   host{
     host="app1"
-    ip=docker_container.apache_1.ip_address
+    ip=module.apache_1.ip_address
   }
   host{
     host="app2"
-    ip=docker_container.apache_2.ip_address
+    ip=module.apache_2.ip_address
   }
 }
 
-[...]
+module "apache_1" {
+  source = "./apache"
+  name="apache_1"
+  image=docker_image.web.latest
+  network=docker_network.app_network_1
+  db_ip=module.db_1.ip_address
+}
 
+module "apache_2" {
+  source = "./apache"
+  name="apache_2"
+  image=docker_image.web.latest
+  network=docker_network.app_network_2
+  db_ip=module.db_2.ip_address
+}
+
+module "db_1" {
+  source = "./mysql"
+  image=docker_image.db.latest
+  name= "db_1"
+  network= docker_network.app_network_1
+}
+module "db_2" {
+  source = "./mysql"
+  image=docker_image.db.latest
+  name= "db_2"
+  network= docker_network.app_network_2
+}
 ```
+
 ::: INFO
->This file consist of [provider](https://www.terraform.io/docs/providers/index.html) 
+>This file consist of [provider](https://www.terraform.io/docs/providers/index.html),
+[module](https://www.terraform.io/docs/modules/index.html)
 and [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
 and [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html)
@@ -121,9 +172,15 @@ It's built with several fields and block:
 
 > Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable `http_port`
 
-#### **`host{ host="app1" ip=docker_container.apache_1.ip_address }`- (type:block->String,String)**  
+#### **`host{ host="app1" ip=module.apache_1.ip_address }`- (type:block->String,String)**  
 
-> Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` the `docker_container` resource 
+> Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` `module` resource 
+
+#### **`module "apache_1" { - (type:block)**
+
+> Block used for module usage.  
+> for more view [tf_module_part](tf_module_part.html)
+
 :::
 
 
@@ -256,11 +313,11 @@ Definition consist of `variable` resource keyword and identifier:
 ## outputs.tf
 ```typescript
 output "apache_1_ip_addr" {
-  value = docker_container.apache_1.ip_address
+  value = module.apache_1.ip_address
 }
 
 output "apache_2_ip_addr" {
-  value = docker_container.apache_2.ip_address
+  value = module.apache_2.ip_address
 }
 output "LB_ip_addr" {
   value = docker_container.LB.ip_address
@@ -286,6 +343,7 @@ used by [Terraform Configuration Language](https://www.terraform.io/docs/configu
   https_port = "443"
   db_port = "3306"
   registry = "localhost:5000"
+  #registry = "192.168.1.76:5000"
   web_image_name = "lamp_terr/web"
   db_image_name = "lamp_terr/database"
   lb_image_name = "lamp_terr/loadbalancer"

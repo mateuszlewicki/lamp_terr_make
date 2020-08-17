@@ -72,51 +72,14 @@ Without [backend](https://www.terraform.io/docs/configuration/backend.html) decl
 
 # File description
 
-## main.tf (part of)
-```typescript
-provider "docker" {
-}
-
-
-resource "docker_container" "LB" {
-  image = docker_image.lb.latest
-  name  = "LB"
-  networks_advanced{
-      name=docker_network.public_network.name
-  }
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-   ports{
-      internal = 1936
-      external = 1936
-  }
-  host{
-    host="app1"
-    ip=docker_container.apache_1.ip_address
-  }
-  host{
-    host="app2"
-    ip=docker_container.apache_2.ip_address
-  }
-}
-
-[...]
-
+## main.tf
+```{r echo=FALSE, warning=FALSE, inlcude=FALSE, results='asis'}
+dump_file_cont("typescript", "../terraform/main.tf")
 ```
+
 ::: INFO
->This file consist of [provider](https://www.terraform.io/docs/providers/index.html) 
+>This file consist of [provider](https://www.terraform.io/docs/providers/index.html),
+[module](https://www.terraform.io/docs/modules/index.html)
 and [resource](https://www.terraform.io/docs/configuration/resources.html) declaration blocks 
 used by [Terraform Configuration Language](https://www.terraform.io/docs/configuration/index.html) 
 and [Docker Provider](https://www.terraform.io/docs/providers/docker/index.html)
@@ -146,9 +109,15 @@ It's built with several fields and block:
 
 > Block with definition which ports should be exposed (one block for one ports pair). Here we are using ports from variable `http_port`
 
-#### **`host{ host="app1" ip=docker_container.apache_1.ip_address }`- (type:block->String,String)**  
+#### **`host{ host="app1" ip=module.apache_1.ip_address }`- (type:block->String,String)**  
 
-> Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` the `docker_container` resource 
+> Block used for additional `/etc/hosts` entries. Here we are using `ip_address` from `apache_1` `module` resource 
+
+#### **`module "apache_1" { - (type:block)**
+
+> Block used for module usage.  
+> for more view [tf_module_part](tf_module_part.html)
+
 :::
 
 
