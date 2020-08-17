@@ -7,8 +7,9 @@
 
 provider "docker" {
 #   host = "tcp://127.0.0.1:2376/"
+#private laptop
+# host = "ssh://mlewicki@192.168.1.76:22"
 }
-
 # variables
 
 ## moved > ./variables.tf
@@ -50,74 +51,39 @@ resource "docker_container" "LB" {
   }
   host{
     host="app1"
-    ip=docker_container.apache_1.ip_address
+    ip=module.apache_1.ip_address
   }
   host{
     host="app2"
-    ip=docker_container.apache_2.ip_address
+    ip=module.apache_2.ip_address
   }
 }
 
-resource "docker_container" "apache_1" {
-  image = docker_image.web.latest
-  name  = "apache_1"
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host="db"
-    ip=docker_container.db_1.ip_address
-  }
+module "apache_1" {
+  source = "./apache"
+  name="apache_1"
+  image=docker_image.web.latest
+  network=docker_network.app_network_1
+  db_ip=module.db_1.ip_address
 }
 
-resource "docker_container" "apache_2" {
-  image = docker_image.web.latest
-  name  = "apache_2"
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal= var.http_port
-      external= var.http_port
-  }
-  ports{
-      internal = var.https_port
-      external = var.https_port
-  }
-  host{
-    host="db"
-    ip=docker_container.db_2.ip_address
-  }
+module "apache_2" {
+  source = "./apache"
+  name="apache_2"
+  image=docker_image.web.latest
+  network=docker_network.app_network_2
+  db_ip=module.db_2.ip_address
 }
 
-resource "docker_container" "db_1" {
-  image = docker_image.db.latest
-  name  = "db_1"
-  networks_advanced{
-      name=docker_network.app_network_1.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
-  }
+module "db_1" {
+  source = "./mysql"
+  image=docker_image.db.latest
+  name= "db_1"
+  network= docker_network.app_network_1
 }
-
-resource "docker_container" "db_2" {
-  image = docker_image.db.latest
-  name  = "db_2"
-  networks_advanced{
-      name=docker_network.app_network_2.name
-  }
-  ports{
-      internal = var.db_port
-      external = var.db_port
-  }
+module "db_2" {
+  source = "./mysql"
+  image=docker_image.db.latest
+  name= "db_2"
+  network= docker_network.app_network_2
 }
