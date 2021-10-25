@@ -24,4 +24,4 @@ db_stop:
 	/usr/share/mariadb/mysql.server stop
 
 db_test: db_start
-	mysql -u mlewicki --password=mlewicki -e 'SELECT * FROM test' mlewicki
+	mysql -u user --password=pass -e 'SELECT * FROM test' exampleDB
